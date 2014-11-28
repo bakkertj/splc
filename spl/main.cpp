@@ -1,3 +1,4 @@
+
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
@@ -5,6 +6,17 @@
 #include <string>
 #include <vector>
 #include <set>
+
+#define __STDC_LIMIT_MACROS
+#define __STDC_CONSTANT_MACROS
+
+#include "llvm/IR/Verifier.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+
+using namespace llvm;
 
 //===----------------------------------------------------------------------===//
 // Lexer
@@ -18,8 +30,6 @@ enum Token {
   // commands
   tok_character = -2,
   tok_be = -3,
-
-  // primary
   tok_identifier = -4,
   tok_article = -5,
   tok_def = -6,
@@ -94,6 +104,7 @@ static std::set<std::string> FirstPersonSet;
 static std::set<std::string> CharacterSet;
 static std::set<std::string> BeSet;
 static std::set<std::string> FirstPersonPossessiveSet;
+static std::set<std::string> PositiveAdjectiveSet;
 
 static void chomp(char *s) {
   while(*s && *s != '\n' && *s != '\r') s++;
@@ -166,6 +177,19 @@ static int loadLists()
     }
     fclose ( fp );
   }
+  
+  fp = fopen ("include/positive_adjective.wordlist.wordlist", "r" );
+  
+  if ( fp != NULL )
+  {
+    char line [ 128 ];
+    while ( fgets ( line, sizeof line, fp ) != NULL )
+    {
+      chomp(line);
+      PositiveAdjectiveSet.insert( line );
+    }
+    fclose ( fp );
+  }
   return 0;
 }
 
@@ -194,6 +218,11 @@ static int isFirstPersonPossessive( std::string word )
   return FirstPersonPossessiveSet.find(word) != FirstPersonPossessiveSet.end();
 }
 
+static int isPositiveAdjective( std::string word )
+{
+  return PositiveAdjectiveSet.find(word) != PositiveAdjectiveSet.end();
+}
+
 /// gettok - Return the next token from standard input.
 static int gettok() {
   static int LastChar = ' ';
@@ -212,6 +241,8 @@ static int gettok() {
     if ( isArticle  ( IdentifierStr) ) return tok_article;
     if ( isFirstPerson  ( IdentifierStr) ) return tok_first_person;
     if ( isFirstPersonPossessive( IdentifierStr) ) return tok_first_person_possessive;
+    if ( isPositiveAdjective( IdentifierStr) ) return tok_positive_adjective;
+    if ( IdentifierStr == "Enter") return tok_enter;
     
     if (IdentifierStr == "def") return tok_def;
     return tok_identifier;
@@ -296,11 +327,19 @@ public:
     : Name(name), Args(args) {}
   
 };
+  
+class EnterAST : public ExprAST {
+  std::string Name;
+public:
+  EnterAST(const std::string &name)
+  : Name(name){}
+};
 
 /// FunctionAST - This class represents a function definition itself.
 class FunctionAST {
 public:
   FunctionAST(PrototypeAST *proto, ExprAST *body) {}
+ // virtual Value *Codegen() = 0;
 };
 } // end anonymous namespace
 
@@ -371,6 +410,40 @@ static ExprAST *ParseIdentifierExpr() {
   return new CallExprAST(IdName, Args);
 }
 
+/// identifierexpr
+///   ::= identifier
+///   ::= identifier '(' expression* ')'
+static ExprAST *ParseCharacterExpr() {
+  std::string IdName = IdentifierStr;
+  printf("Parsing characeter expression\n");
+  getNextToken();  // eat identifier.
+  
+  if (CurTok != '(') // Simple variable ref.
+    return new VariableExprAST(IdName);
+  
+  // Call.
+  getNextToken();  // eat (
+  std::vector<ExprAST*> Args;
+  if (CurTok != ')') {
+    while (1) {
+      ExprAST *Arg = ParseExpression();
+      if (!Arg) return 0;
+      Args.push_back(Arg);
+      
+      if (CurTok == ')') break;
+      
+      if (CurTok != ',')
+        return Error("Expected ')' or ',' in argument list");
+      getNextToken();
+    }
+  }
+  
+  // Eat the ')'.
+  getNextToken();
+  
+  return new CallExprAST(IdName, Args);
+}
+
 /// numberexpr ::= number
 static ExprAST *ParseNumberExpr() {
   ExprAST *Result = new NumberExprAST(NumVal);
@@ -395,9 +468,10 @@ static ExprAST *ParseParenExpr() {
 ///   ::= numberexpr
 ///   ::= parenexpr
 static ExprAST *ParsePrimary() {
+  printf("Token: %d\n", CurTok);
   switch (CurTok) {
   default: return Error("unknown token when expecting an expression");
-  case tok_identifier: return ParseIdentifierExpr();
+  case tok_character:  return ParseCharacterExpr();
   case tok_number:     return ParseNumberExpr();
   case '(':            return ParseParenExpr();
   }
@@ -497,6 +571,12 @@ static PrototypeAST *ParseExtern() {
   return ParsePrototype();
 }
 
+/// external ::= 'enter' prototype
+static ExprAST *ParseEnter() {
+  getNextToken();  // eat extern.
+  return new EnterAST(IdentifierStr);
+}
+
 //===----------------------------------------------------------------------===//
 // Top-Level parsing
 //===----------------------------------------------------------------------===//
@@ -510,7 +590,16 @@ static void HandleDefinition() {
   }
 }
 
-static void HandleExtern() {
+static void HandleEnter() {
+  if (ParseEnter()) {
+    fprintf(stderr, "Parsed an enter\n");
+  } else {
+    // Skip token for error recovery.
+    getNextToken();
+  }
+}
+
+static void HandleEntern() {
   if (ParseExtern()) {
     fprintf(stderr, "Parsed an extern\n");
   } else {
@@ -537,6 +626,7 @@ static void MainLoop() {
     case tok_eof:    return;
     case ';':        getNextToken(); break;  // ignore top-level semicolons.
     case tok_def:    HandleDefinition(); break;
+    case tok_enter:  HandleEnter(); break;
     default:         HandleTopLevelExpression(); break;
     }
   }
