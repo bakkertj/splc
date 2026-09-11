@@ -323,7 +323,7 @@ SentencePtr Parser::parseAssignment() {
   s->loc = cur().loc;
   ++pos_;  // you / thou
   if (!(accept("are") || accept("art"))) {
-    // "You nothing!" / "You lying stupid coward!" — the value follows directly
+    // "You nothing!" / "You lying stupid coward!": the value follows directly
   }
   if (isWord("as") && peek(2).lower == "as") {
     ++pos_;

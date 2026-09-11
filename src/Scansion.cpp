@@ -43,14 +43,24 @@ ScansionResult Scansion::scanLine(const DialogueLine &line) const {
   struct Cell { int cost = INT_MAX; std::string pat; };
   std::vector<std::vector<Cell>> best(opts.size() + 1, std::vector<Cell>(MAXS + 1));
   best[0][0].cost = 0;
-  auto costOf = [&](const std::string &s, int start) {
+  // Which words open a new phrase (follow punctuation)?  A foot may be inverted there.
+  std::vector<bool> afterCaesura(opts.size(), false);
+  for (size_t i = 1; i < opts.size(); ++i) {
+    int ti = line.tokens[i];
+    if (ti > 0 && t_[ti - 1].kind == Tok::Punct && std::strchr(".,;:!?", t_[ti - 1].text[0])) afterCaesura[i] = true;
+  }
+  // Metrical cost: a stressed syllable in a weak position counts; an unstressed
+  // syllable in a strong position is "promoted" and does not (standard prosody).
+  // The first foot, and a foot beginning a new phrase after punctuation, may be
+  // inverted for free.
+  auto costOf = [&](const std::string &s, int start, bool caesura) {
     int c = 0;
     for (size_t k = 0; k < s.size(); ++k) {
       int p = start + (int)k;
-      char want = (p % 2 == 1) ? '1' : '0';
-      if (p == 10) want = '0';  // feminine ending
-      if (opts_.allowInitialTrochee && p <= 1) continue;  // the first foot may be inverted (Shakespeare does it constantly)
-      if (s[k] != 'x' && s[k] != want) ++c;
+      bool weak = (p % 2 == 0) || p == 10;  // odd positions are strong; the 11th syllable is a feminine ending
+      if (opts_.allowInitialTrochee && p <= 1) continue;
+      if (caesura && k <= 1 && start % 2 == 0) continue;
+      if (s[k] == '1' && weak) ++c;
     }
     return c;
   };
@@ -60,7 +70,7 @@ ScansionResult Scansion::scanLine(const DialogueLine &line) const {
       for (const std::string &o : opts[i]) {
         int np = pos + (int)o.size();
         if (np > MAXS) continue;
-        int c = best[i][pos].cost + costOf(o, pos);
+        int c = best[i][pos].cost + costOf(o, pos, afterCaesura[i]);
         if (c < best[i + 1][np].cost) { best[i + 1][np].cost = c; best[i + 1][np].pat = best[i][pos].pat + o; }
       }
     }

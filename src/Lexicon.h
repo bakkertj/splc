@@ -19,7 +19,9 @@ struct LexEntry {
 class Lexicon {
  public:
   // Case-folded lookup with Elizabethan normalisation (call'd -> called, didst ...).
-  static const LexEntry *lookup(const std::string &word);
+  // extraSyllables (optional) receives 1 when the word was found only by stripping an
+  // -est/-eth suffix that carries its own syllable (vilest, presenteth).
+  static const LexEntry *lookup(const std::string &word, int *extraSyllables = nullptr);
   static size_t size();
 
   // All plausible stress patterns for a word in verse, including Elizabethan

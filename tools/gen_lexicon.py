@@ -44,7 +44,7 @@ def load_cmu():
             w = re.sub(r"\(\d+\)$", "", parts[0]).lower()
             if not re.fullmatch(r"[a-z][a-z'\-]*", w): continue
             phones = [p for p in parts[1:] if not p.startswith("#")]
-            s = "".join(ch for ph in phones for ch in ph if ch.isdigit()).replace("2", "1")
+            s = "".join(ch for ph in phones for ch in ph if ch.isdigit()).replace("2", "x")  # secondary stress may fill either position
             if s and s not in stress[w]: stress[w].append(s)
             r = rhyme_key(phones)
             if r and r not in rhymes[w]: rhymes[w].append(r)

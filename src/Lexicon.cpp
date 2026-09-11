@@ -47,18 +47,34 @@ static const LexEntry *rawLookup(const std::string &w) {
   return nullptr;
 }
 
-const LexEntry *Lexicon::lookup(const std::string &word) {
+const LexEntry *Lexicon::lookup(const std::string &word, int *extraSyllables) {
   std::string w = normalize(word);
+  if (extraSyllables) *extraSyllables = 0;
   if (const LexEntry *e = rawLookup(w)) return e;
   // Elizabethan spellings and contractions.
-  struct Rule { const char *suf; const char *rep; };
+  struct Rule { const char *suf; const char *rep; int syllables; };
   static const Rule rules[] = {
-      {"'d", "ed"}, {"'st", ""}, {"est", ""}, {"eth", "s"}, {"st", ""}, {"'s", ""}, {"s'", "s"},
+      {"'d", "ed", 0}, {"'st", "", 0}, {"est", "", 1}, {"eth", "s", 1}, {"st", "", 0}, {"'s", "", 0}, {"s'", "s", 0},
   };
   for (const Rule &r : rules) {
     if (endsWith(w, r.suf) && w.size() > std::strlen(r.suf) + 2) {
       std::string base = w.substr(0, w.size() - std::strlen(r.suf)) + r.rep;
-      if (const LexEntry *e = rawLookup(base)) return e;
+      if (const LexEntry *e = rawLookup(base)) {
+        if (extraSyllables) *extraSyllables = r.syllables;
+        return e;
+      }
+    }
+  }
+  // o'ercharged, ne'er-do-well: the contraction is one syllable on the front of a known word
+  for (const char *pre : {"o'er", "e'er", "ne'er"}) {
+    size_t n = std::strlen(pre);
+    if (w.size() > n + 2 && w.compare(0, n, pre) == 0) {
+      std::string rest = w.substr(n);
+      if (!rest.empty() && rest[0] == '-') rest.erase(0, 1);
+      if (const LexEntry *e = rawLookup(rest)) {
+        if (extraSyllables) *extraSyllables = 1;
+        return e;
+      }
     }
   }
   std::string nohy = w;
@@ -81,7 +97,8 @@ std::vector<std::string> Lexicon::stressOptions(const std::string &word, bool gr
   bool grave = false;
   std::string w = normalize(word, &grave);
   graveAccent = graveAccent || grave;
-  const LexEntry *e = lookup(word);
+  int extra = 0;
+  const LexEntry *e = lookup(word, &extra);
   std::set<std::string> res;
   if (!e) {
     // Unknown word: one flexible syllable per vowel group (lenient).
@@ -100,6 +117,9 @@ std::vector<std::string> Lexicon::stressOptions(const std::string &word, bool gr
   }
   std::vector<std::string> opts;
   splitOptions(e->stress, opts);
+  if (extra) {  // vilest, presenteth, o'ercharged: the affix is a syllable of its own
+    for (std::string &o : opts) o = (w.compare(0, 1, "o") == 0 || w.compare(0, 1, "e") == 0 || w.compare(0, 1, "n") == 0) && w.find("'er") != std::string::npos ? "x" + o : o + "0";
+  }
   for (std::string o : opts) {
     bool contracted = endsWith(w, "'d") || endsWith(w, "'st");
     if (graveAccent) {
@@ -112,8 +132,8 @@ std::vector<std::string> Lexicon::stressOptions(const std::string &word, bool gr
     if (e->flags & W_FUNCTION) { res.insert(std::string(o.size(), 'x')); continue; }
     res.insert(o);
     if (contracted) continue;
-    // -ed may be a full syllable (bless-ed); -ion/-ious may be two (na-ti-on)
-    if (endsWith(w, "ed") && !endsWith(o, "0")) res.insert(o + "0");
+    // -ed may be a full syllable (bless-ed, determin-ed); -ion/-ious may be two (na-ti-on)
+    if (endsWith(w, "ed")) res.insert(o + "0");
     if (endsWith(w, "ion") || endsWith(w, "ious") || endsWith(w, "ience")) res.insert(o + "0");
     // syncope: heaven, even, power, flower, spirit, being, every, -ual, -ious -> one fewer
     static const char *syn[] = {"aven", "even", "ower", "irit", "eing", "ery", "ary", "ual", "ious", "eous", "ier", "ior", "eor",

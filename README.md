@@ -1,10 +1,10 @@
-# splc — an LLVM front end for the Shakespeare Programming Language
+# splc: an LLVM front end for the Shakespeare Programming Language
 
 `splc` compiles plays written in the [Shakespeare Programming Language](https://shakespearelang.com)
 to native code through LLVM. Unlike the original, it understands a large English
 vocabulary (171,534 words: all of CMUdict, WordNet nouns and adjectives, Shakespeare's
-dramatis personae) rather than a few hundred hand-picked words, and it can check —
-or insist — that every line of dialogue is in iambic pentameter.
+dramatis personae) rather than a few hundred hand-picked words, and it can check,
+or insist, that every line of dialogue is in iambic pentameter.
 
 ```
 $ splc examples/hello_verse.spl -fpentameter=error -o hello && ./hello
@@ -37,7 +37,7 @@ splc [options] play.spl
   -c / -emit-llvm               stop at an object file / LLVM IR
   -O0 -O1 -O2 -O3               optimisation level (default -O2)
   -fpentameter=off|warn|error   scansion check (default warn)
-  -fpentameter-tolerance=N      stressed syllables allowed out of place (default 1)
+  -fpentameter-tolerance=N      metrical cost allowed per line (default 0)
   -fno-feminine-endings         forbid an 11th unstressed syllable
   -fno-initial-trochee          forbid an inverted first foot
   -fno-prose-exemption          scan low-born characters too (see below)
@@ -79,16 +79,22 @@ The grammar is SPL 1.2.1 with these liberties:
 
 ## Scansion rules
 
-Each word contributes its CMUdict stress pattern(s) (secondary stress counts as stress);
-Shakespearean names take theirs from `data/name_stress.tsv` (*Aumerle* 01, *Romeo* 100 or 10).
-Monosyllables and function words are metrically flexible. Elizabethan variants are
-allowed automatically: `-ed` as a full syllable, `-ion` as two, syncope in *heaven, power,
-spirit, every, glorious, general, dangerous, flattering*, the contractions `o'er`, `e'er`,
-`'gainst`, `'tis`, and cross-word elisions (*th'expense*, *t'assist*, *I'm*, *thou'rt*,
-*we're*, *'tis*, *i'th'*). Write `blessèd` to force the extra syllable. A line scans if
-some choice of variants yields 10 syllables (11 with a feminine ending) with at most
-`tolerance` stressed syllables out of place; the first foot may be inverted. A short line
-opening or closing a speech is treated as a shared line and not checked.
+Each word contributes its CMUdict stress pattern(s): primary stress is `1`, unstressed
+`0`, and secondary stress is flexible. Shakespearean names take theirs from
+`data/name_stress.tsv` (*Aumerle* 01, *Romeo* 100 or 10). Monosyllables and function
+words are metrically flexible. Elizabethan variants are allowed automatically: `-ed` as
+a full syllable (*determinèd*), `-ion` as two, `-est`/`-eth` as a syllable (*vilest*,
+*presenteth*), syncope in *heaven, power, spirit, every, glorious, general, dangerous,
+flattering*, the contractions `o'er`, `e'er`, `'gainst`, `'tis`, and cross-word elisions
+(*th'expense*, *t'assist*, *I'm*, *thou'rt*, *we're*, *'tis*, *i'th'*). Write `blessèd`
+to force the extra syllable.
+
+A line scans if some choice of variants yields 10 syllables (11 with a feminine ending)
+at a metrical cost of at most `tolerance` (default 0). The cost model is the prosodist's:
+a stressed syllable in a weak position costs 1; an unstressed syllable in a strong
+position is *promoted* and costs nothing; the first foot may be inverted, and so may a
+foot that opens a new phrase after punctuation (*Admit impediments. Love is not love*).
+A short line opening or closing a speech is treated as a shared line and not checked.
 
 **Prose.** Shakespeare's nobles speak verse and his servants, clowns and fools speak
 prose. `splc` reads each character's station from the dramatis personae: a description
@@ -96,16 +102,29 @@ containing *servant, clown, fool, porter, nurse, gravedigger, peasant, shepherd,
 citizen, rogue…* (or the word *prose*) exempts that character from scansion; the word
 *verse* overrides. `--scan` marks such lines `prose`; `-fno-prose-exemption` scans everyone.
 
-**Couplets.** With `-fcouplets`, every scene must end in a rhyming couplet — the last two
+**Couplets.** With `-fcouplets`, every scene must end in a rhyming couplet, meaning the last two
 lines of dialogue, whoever speaks them. Rhymes are compared on CMU phones from the last
 stressed vowel; an identical word rhymes (the bard allows it), and a spelling rhyme is
 accepted for eye-rhymes and shifted vowels (*love/move*).
 
-Calibration against Shakespeare himself (Richard II, entirely verse, 2,606 lines of six
-or more words): 74% scan with tolerance 0, 89% with the default tolerance 1, 92% with 2.
-Remaining failures are mostly lines the editors joined, syncopes no rule covers, and the
-irregular lines Shakespeare simply wrote. The default is therefore `warn`;
-`-fpentameter=error` is for the purist.
+### Calibration
+
+`shakespeare/sonnets_lines.txt` (all 154 sonnets, 2,155 lines, made from the
+shakespeare.mit.edu pages by `tools/sonnets_to_text.py`) and Richard II (entirely verse,
+2,606 lines of six or more words) are the reference corpora; the controls are the same
+sonnet lines with their words shuffled, and Hamlet's prose wrapped to ten-ish syllables.
+
+| corpus | tolerance 0 | tolerance 1 |
+|---|---|---|
+| Sonnets | 93% | 97% |
+| Richard II | 89% | 94% |
+| Sonnets, words shuffled (control) | 58% | 91% |
+| Hamlet prose (control) | 12% | 41% |
+
+Tolerance 0 is the default because it is where the checker still tells verse from
+shuffled verse; most of Shakespeare's own misses are lines the editors joined, syncopes
+no rule covers, or the irregular lines he simply wrote. The default mode is therefore
+`warn`; `-fpentameter=error` is for the purist.
 
 ## Regenerating the lexicon
 

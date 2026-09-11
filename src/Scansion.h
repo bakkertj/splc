@@ -11,7 +11,7 @@ namespace spl {
 
 struct ScansionOptions {
   enum Mode { Off, Warn, Error } mode = Warn;
-  int tolerance = 1;        // stressed syllables allowed in weak positions (and vice versa)
+  int tolerance = 0;        // stressed syllables allowed in weak positions
   int minWords = 3;         // shorter lines (shared lines, "Ay.") are not checked
   bool allowFeminine = true;
   bool allowInitialTrochee = true;

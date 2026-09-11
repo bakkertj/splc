@@ -3,6 +3,7 @@ build/
 *.ll
 a.out
 .DS_Store
+shakespeare/shakespeare.mit.edu/
 Claude outputs/
 build-mac/
 build_mac.log
