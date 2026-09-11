@@ -24,7 +24,7 @@ static void usage() {
                "  -O0 | -O1 | -O2 | -O3     optimisation level (default -O2)\n"
                "  -emit-llvm                write LLVM IR (.ll) instead of an object\n"
                "  -fpentameter=off|warn|error   check that every line of dialogue scans (default: warn)\n"
-               "  -fpentameter-tolerance=N  stressed syllables allowed out of place (default: 0)\n"
+               "  -fpentameter-tolerance=N  metrical cost allowed per line (default: 0)\n"
                "  -fno-feminine-endings     disallow an 11th unstressed syllable\n"
                "  -fno-initial-trochee      disallow an inverted first foot\n"
                "  -fno-prose-exemption      scan low-born characters too (by default servants, clowns\n"
