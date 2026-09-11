@@ -17,6 +17,8 @@ struct ScansionOptions {
   bool allowInitialTrochee = true;
   bool proseExemption = true;   // low-born characters may speak prose
   bool couplets = false;        // warn when a scene does not end in a rhyming couplet
+  bool nearRhymes = false;      // pool Elizabethan vowel classes when comparing rhymes
+  bool sonnets = false;         // every verse speech must be a sonnet: 14 lines, ABAB CDCD EFEF GG
   std::string rhymeScheme;      // e.g. "AABB" or "ABAB CDCD EFEF GG": applied to each scene's verse lines, repeating
 };
 
@@ -39,9 +41,14 @@ class Scansion {
   // Check a run of verse lines against a rhyme scheme; blocks of the scheme's length repeat.
   int checkRhymeScheme(const std::vector<const DialogueLine *> &lines, const std::string &scheme);
   int checkRhymeScheme(const Program &prog);
+  int checkSonnets(const Program &prog);
   // The verse lines of a scene (prose speeches and [Prose] sections skipped), in order.
   std::vector<const DialogueLine *> verseLines(const Program &prog, const Scene &s) const;
   ScansionResult scanLine(const DialogueLine &line) const;
+  // For a line that does not scan: which single word, given a different stress pattern,
+  // would make it scan?  Returns "word=pattern" strings.  Used to mine Elizabethan
+  // stress shifts from a corpus (--suggest-stress).
+  std::vector<std::string> suggestStress(const DialogueLine &line) const;
 
  private:
   const std::vector<Token> &t_;

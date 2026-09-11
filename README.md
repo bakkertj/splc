@@ -48,9 +48,13 @@ splc [options] play.spl
   -fno-prose-exemption          scan low-born characters too (see Prose below)
   -fcouplets                    require every scene to end in a rhyming couplet
   -frhyme-scheme=SCHEME         require a rhyme scheme, e.g. AABB or "ABAB CDCD EFEF GG"
+  -fnear-rhymes                 accept Elizabethan near-rhymes (come/doom, were/bear)
+  -fsonnet                      every speech must be a sonnet: fourteen lines, ABAB CDCD EFEF GG
   -fsyntax-only                 parse and scan, produce nothing
   --scan                        print the scansion of every line of dialogue and exit
   --scan-text                   scan a plain text file (every line is verse) and exit
+  --suggest-stress              for each failing line of a text file, print the one-word stress
+                                changes that would make it scan (corpus mining)
   --lexicon-size                print the number of words in the lexicon and exit
   --runtime <dir>               where to find libsplrt.a (default: the build directory)
 ```
@@ -109,11 +113,11 @@ The grammar is SPL 1.2.1 with these liberties:
 | `runtime/splrt.c` | stage tracking, stacks, I/O, checked arithmetic, runtime errors |
 | `tools/gen_lexicon.py` | builds `generated/Lexicon.inc` from `data/` |
 | `tools/sonnets_to_text.py` | turns the shakespeare.mit.edu sonnet pages into `shakespeare/sonnets.txt` and `sonnets_lines.txt` |
-| `data/` | CMUdict, WordNet index files, VADER, `shakespeare_names.txt`, `name_stress.tsv` (596 Shakespearean names with their metrical stress), `overrides.tsv` |
+| `data/` | CMUdict, WordNet index files, VADER, `shakespeare_names.txt`, `name_stress.tsv` (596 Shakespearean names with their metrical stress), `elizabethan_stress.tsv` (words Shakespeare stressed differently), `overrides.tsv` |
 | `generated/Lexicon.inc` | the word table compiled into `splc` (about 5.5 MB of source, about 2 MB in the binary) |
 | `shakespeare/` | the 154 sonnets as plain text, used for calibration |
-| `examples/` | `hello.spl` (prose), `hello_verse.spl` (strict pentameter), `primes.spl` (loops, I/O, stack), `fizzbuzz.spl`, `reverse.spl` (a string reversed through the stack), `couplets.spl` (couplets and a prose-speaking servant) |
-| `test/` | the two shell helpers `ctest` uses; the ten tests are declared in `CMakeLists.txt` |
+| `examples/` | `hello.spl` (prose), `hello_verse.spl` (strict pentameter), `primes.spl` (loops, I/O, stack), `fizzbuzz.spl`, `reverse.spl` (a string reversed through the stack), `couplets.spl` (couplets and a prose-speaking servant), `sonnet.spl` (a program that is one sonnet) |
+| `test/` | the two shell helpers `ctest` uses; the thirteen tests are declared in `CMakeLists.txt` |
 
 ## How a play is compiled
 
@@ -138,7 +142,9 @@ division by zero, negative roots and the like.
 
 Each word contributes its CMUdict stress pattern(s): primary stress is `1`, unstressed
 `0`, and secondary stress is flexible. Shakespearean names take theirs from
-`data/name_stress.tsv` (*Aumerle* 01, *Romeo* 100 or 10). Monosyllables and function
+`data/name_stress.tsv` (*Aumerle* 01, *Romeo* 100 or 10), and words whose stress has
+moved since 1600 get both readings from `data/elizabethan_stress.tsv` (*aspect*,
+*complete*, *revenue*, *welcome*, *therein*, *unknown*). Monosyllables and function
 words are metrically flexible. Elizabethan variants are allowed automatically: `-ed` as
 a full syllable (*determined* as four), `-ion` as two, `-est`/`-eth` as a syllable
 (*vilest*, *presenteth*), syncope in *heaven, power, spirit, every, glorious, general,
@@ -170,6 +176,17 @@ and voicing is ignored (*is/amiss*).
 **Rhyme schemes.** `-frhyme-scheme=SCHEME` checks each scene's verse lines against a
 pattern that repeats: `AABB` for couplets throughout, `"ABAB CDCD EFEF GG"` for sonnets.
 With `--scan-text` the scheme is applied to each blank-line-separated stanza of the file.
+`-fnear-rhymes` pools the vowels Elizabethan ears let rhyme (*come/doom*, *wrong/young*,
+*were/bear*, *past/waste*, *die/memory*) while still requiring the same consonants.
+
+**Sonnets.** `-fsonnet` requires every verse speech to be a sonnet: fourteen lines rhyming
+ABAB CDCD EFEF GG, and scanning if `-fpentameter` is on. `examples/sonnet.spl` is a
+program that is one sonnet; it prints `Hi!`:
+
+```
+$ splc -fsonnet -fpentameter=error examples/sonnet.spl -o hi && ./hi
+Hi!
+```
 
 ## Calibration
 
@@ -197,11 +214,16 @@ Rhyme, on the sonnets' 1,078 rhyme pairs:
 
 ```
 grep -v '^Sonnet' shakespeare/sonnets.txt | splc --scan-text "-frhyme-scheme=ABAB CDCD EFEF GG" /dev/stdin
-80 rhyme violation(s) in 154 stanza(s)      # 93% recognised
+80 rhyme violation(s) in 154 stanza(s)      # 93% recognised; 22 (98%) with -fnear-rhymes
 ```
 
-The misses are Shakespeare's own near-rhymes (*come/doom*, *tongue/wrong*). The same
-lines with their words shuffled produce 1,004 violations.
+The strict misses are Shakespeare's own near-rhymes (*come/doom*, *tongue/wrong*). The same
+lines with their words shuffled produce 1,004 violations (974 with `-fnear-rhymes`).
+
+`--suggest-stress` is how `data/elizabethan_stress.tsv` was seeded: run over a corpus it
+lists, for every failing line, the single words whose stress would have to move for the
+line to scan; the words that recur (*antique*, *therein*, *welcome*) are real Elizabethan
+stress, the rest are mid-line trochees.
 
 ## Regenerating the lexicon and the corpus
 

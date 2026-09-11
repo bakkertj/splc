@@ -174,7 +174,31 @@ static std::string finalSyllable(const std::string &key) {
   return lastVowel == std::string::npos ? key : key.substr(lastVowel);
 }
 
-bool Lexicon::rhymes(const std::string &a, const std::string &b) {
+// Elizabethan near-rhyme: same (unvoiced) consonants after the last vowel, and vowels
+// from one pool.  The pools overlap on purpose (aa rhymed both ways).
+static std::string nearKey(const std::string &finalSylIn) {
+  // pools: back vowels (come/doom, wrong/young); front vowels (were/bear, there/dear);
+  // the a's (past/waste, pass/was); and -y with eye/die, as the sonnets rhyme them
+  static const char *pools[] = {"ah uw uh ao aa ow", "eh ih er iy ey", "ae ey aa", "ay iy"};
+  std::string finalSyl = finalSylIn;
+  if (finalSyl.compare(0, 2, "er") == 0) finalSyl = "eh" + finalSyl.substr(1);  // er = eh + r: were/bear, herd/beard
+  if (finalSyl.size() < 2) return finalSyl;
+  std::string vowel = finalSyl.substr(0, 2), rest = finalSyl.substr(2);
+  std::string cls;
+  for (int i = 0; i < 4; ++i)
+    if (std::string(pools[i]).find(vowel) != std::string::npos) cls.push_back((char)('A' + i));
+  if (cls.empty()) cls = vowel;
+  return cls + "/" + rest;
+}
+static bool nearMatch(const std::string &x, const std::string &y) {
+  std::string kx = nearKey(x), ky = nearKey(y);
+  size_t sx = kx.find('/'), sy = ky.find('/');
+  if (kx.substr(sx) != ky.substr(sy)) return false;
+  for (char c : kx.substr(0, sx)) if (ky.substr(0, sy).find(c) != std::string::npos) return true;
+  return false;
+}
+
+bool Lexicon::rhymes(const std::string &a, const std::string &b, bool near) {
   std::string wa = normalize(a), wb = normalize(b);
   if (wa == wb) return true;  // identical rhyme: the bard allows it
   const LexEntry *ea = lookup(a), *eb = lookup(b);
@@ -188,8 +212,10 @@ bool Lexicon::rhymes(const std::string &a, const std::string &b) {
       return k;
     };
     for (const std::string &x : ra)
-      for (const std::string &y : rb)
+      for (const std::string &y : rb) {
         if (x == y || unvoice(finalSyllable(x)) == unvoice(finalSyllable(y))) return true;
+        if (near && nearMatch(unvoice(finalSyllable(x)), unvoice(finalSyllable(y)))) return true;
+      }
     // Elizabethan eye-rhymes and shifted vowels (love/move, eye/die): accept a spelling rhyme too
   }
   auto spell = [](std::string w) {

@@ -15,6 +15,9 @@ namespace spl {
 // fall on even positions, allowing `tolerance` violations.  Flexible ('x')
 // syllables never count as violations.  Dynamic programming over (word, syllable
 // position) keeps this linear in practice.
+static ScansionResult scanWithOptions(const Scansion &sc, const ScansionOptions &opts_, const std::vector<Token> &t_,
+                                      const DialogueLine &line, std::vector<std::vector<std::string>> opts, bool unknown);
+
 ScansionResult Scansion::scanLine(const DialogueLine &line) const {
   ScansionResult r;
   std::vector<std::vector<std::string>> opts;
@@ -24,6 +27,38 @@ ScansionResult Scansion::scanLine(const DialogueLine &line) const {
     if (!Lexicon::lookup(t.text)) r.unknownWords = true;
     opts.push_back(o);
   }
+  return scanWithOptions(*this, opts_, t_, line, std::move(opts), r.unknownWords);
+}
+
+std::vector<std::string> Scansion::suggestStress(const DialogueLine &line) const {
+  std::vector<std::string> out;
+  std::vector<std::vector<std::string>> base;
+  for (int ti : line.tokens) base.push_back(Lexicon::stressOptions(t_[ti].text, t_[ti].graveAccent));
+  for (size_t i = 0; i < base.size(); ++i) {
+    const std::string &w = t_[line.tokens[i]].lower;
+    // candidates: every pattern of the same length with exactly one primary stress
+    std::set<std::string> tried;
+    for (const std::string &o : base[i]) {
+      if (o.size() < 2 || o.find('x') != std::string::npos) continue;
+      for (size_t k = 0; k < o.size(); ++k) {
+        std::string alt(o.size(), '0');
+        alt[k] = '1';
+        if (alt == o || tried.count(alt)) continue;
+        tried.insert(alt);
+        std::vector<std::vector<std::string>> opts = base;
+        opts[i] = {alt};
+        ScansionResult r = scanWithOptions(*this, opts_, t_, line, opts, false);
+        if (r.scans) out.push_back(w + "=" + alt);
+      }
+    }
+  }
+  return out;
+}
+
+static ScansionResult scanWithOptions(const Scansion &, const ScansionOptions &opts_, const std::vector<Token> &t_,
+                                      const DialogueLine &line, std::vector<std::vector<std::string>> opts, bool unknown) {
+  ScansionResult r;
+  r.unknownWords = unknown;
   // Cross-word elisions the verse allows: th'expense, t'assist, I'm, thou'rt, we're, 'tis, i'th'.
   static const std::set<std::string> elidable = {"the", "to", "thou", "thy", "my", "be", "he", "she", "we", "i", "you", "they", "so", "thee"};
   static const std::set<std::string> pronouns = {"i", "thou", "he", "she", "it", "we", "you", "they", "that", "there", "who", "what", "here", "this"};
@@ -155,7 +190,7 @@ int Scansion::checkRhymeScheme(const std::vector<const DialogueLine *> &lines, c
       for (size_t j = 0; j < i; ++j) {
         if (sch[j] != sch[i]) continue;
         const Token &w1 = t_[lines[base + j]->tokens.back()], &w2 = t_[lines[base + i]->tokens.back()];
-        if (!Lexicon::rhymes(w1.text, w2.text)) {
+        if (!Lexicon::rhymes(w1.text, w2.text, opts_.nearRhymes)) {
           ++failed;
           std::string msg = "line " + std::to_string(i + 1) + " of the stanza should rhyme with line " + std::to_string(j + 1) +
                             " (" + sch + "): '" + w1.text + "' / '" + w2.text + "'";
@@ -177,6 +212,30 @@ int Scansion::checkRhymeScheme(const Program &prog) {
   return failed;
 }
 
+int Scansion::checkSonnets(const Program &prog) {
+  if (!opts_.sonnets) return 0;
+  int failed = 0;
+  for (const Act &a : prog.acts)
+    for (const Scene &s : a.scenes) {
+      bool inProse = false;
+      for (const Item &it : s.items) {
+        if (it.kind == Item::Prose) inProse = true;
+        else if (it.kind == Item::Verse) inProse = false;
+        if (it.kind != Item::Speech || inProse || (opts_.proseExemption && prog.characters[it.speaker].prose)) continue;
+        std::vector<const DialogueLine *> lines;
+        for (const DialogueLine &dl : it.lines) lines.push_back(&dl);
+        if (lines.size() != 14) {
+          ++failed;
+          std::string msg = "a sonnet has fourteen lines; this speech has " + std::to_string(lines.size());
+          if (opts_.mode == ScansionOptions::Error) diag_.error(it.loc, msg);
+          else diag_.warning(it.loc, msg);
+        }
+        failed += checkRhymeScheme(lines, "ABAB CDCD EFEF GG");
+      }
+    }
+  return failed;
+}
+
 int Scansion::checkCouplets(const Program &prog) {
   if (!opts_.couplets) return 0;
   int failed = 0;
@@ -190,7 +249,7 @@ int Scansion::checkCouplets(const Program &prog) {
       }
       if (tail.size() < 2) continue;
       const Token &w1 = t_[tail[1]->tokens.back()], &w2 = t_[tail[0]->tokens.back()];
-      if (Lexicon::rhymes(w1.text, w2.text)) continue;
+      if (Lexicon::rhymes(w1.text, w2.text, opts_.nearRhymes)) continue;
       ++failed;
       std::string msg = "scene does not end in a rhyming couplet ('" + w1.text + "' / '" + w2.text + "')";
       if (opts_.mode == ScansionOptions::Error) diag_.error(w2.loc, msg);

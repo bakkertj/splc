@@ -1,0 +1,77 @@
+# Words whose stress moved between Shakespeare's day and ours, or that he stressed either
+# way as the line required.  word<TAB>additional stress option(s), '|'-separated; these are
+# ADDED to the CMUdict pattern (data/overrides.tsv replaces it instead).
+# Mined with `splc --suggest-stress` over the sonnets and Richard II, then curated against
+# the usual scholarship (Kokeritz, Abbott, the Arden footnotes).
+antique	10
+aspect	01
+access	01
+character	010
+commendable	0100
+complete	10
+confessor	100
+contract	01
+contrary	010
+converse	01
+delectable	1000
+detestable	1000
+discourse	01
+distinct	10
+edict	01
+entire	10
+envy	01
+exile	01
+extreme	10
+farewell	10
+forlorn	10
+humane	10
+instinct	01
+july	10
+mankind	10
+misconstrue	010
+obdurate	010
+obscure	10
+opportune	100
+perfume	01
+perfumes	01
+perfumed	01
+persever	010
+pioner	010
+portent	01
+precept	01
+pursue	10
+record	01
+relapse	10
+revenue	010
+secure	10
+sepulchre	010
+sinister	010
+sojourn	01
+supreme	10
+triumphing	010
+welcome	01
+twofold	01
+# adverbs and pronouns in there-/where- and un- compounds took either stress
+therein	10
+thereby	10
+thereof	10
+thereon	10
+thereto	10
+wherein	10
+whereof	10
+whereon	10
+wherefore	10
+without	10
+within	10
+unborn	10
+unknown	10
+unseen	10
+untold	10
+unkind	10
+untrue	10
+unjust	10
+unsure	10
+unthrifty	100
+somewhat	01
+methinks	10
+away	10

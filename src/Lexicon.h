@@ -34,7 +34,9 @@ class Lexicon {
 
   // Do two words rhyme?  Exact on CMU phones when both are known; otherwise a
   // spelling rhyme on the final vowel group and what follows it.
-  static bool rhymes(const std::string &a, const std::string &b);
+  // With `near`, vowels that Elizabethan ears (or spelling) let rhyme are pooled:
+  // come/doom, wrong/young, were/bear, past/waste.
+  static bool rhymes(const std::string &a, const std::string &b, bool near = false);
 };
 
 }  // namespace spl

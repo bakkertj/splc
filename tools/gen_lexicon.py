@@ -8,6 +8,7 @@ Sources (all in data/):
   shakespeare_names.txt one name per line           -> character names
   name_stress.tsv       name<TAB>stress             -> metrical stress of names (wins over CMUdict)
   overrides.tsv         word<TAB>flags<TAB>polarity<TAB>stress  (hand-maintained; wins)
+  elizabethan_stress.tsv word<TAB>extra stress options          (added to CMUdict's, not replacing)
 
 Entry layout emitted:  { "word", flags, polarity, "stress1|stress2", "rhyme1|rhyme2" }
   rhyme: CMU phones from the last stressed vowel to the end, e.g. "ayt" for night/bright.
@@ -84,6 +85,17 @@ def load_names():
             names[n.lower()] = st.strip()
     return names
 
+def load_elizabethan():
+    """word -> extra stress options to add alongside CMUdict's."""
+    extra = {}
+    p = os.path.join(DATA, "elizabethan_stress.tsv")
+    if os.path.exists(p):
+        for l in open(p):
+            if not l.strip() or l.startswith("#"): continue
+            w, st = (l.rstrip("\n").split("\t") + [""])[:2]
+            if st.strip(): extra[w.lower()] = st.strip()
+    return extra
+
 def load_overrides():
     ov = {}
     p = os.path.join(DATA, "overrides.tsv")
@@ -107,8 +119,9 @@ def main():
     pol = load_vader()
     names = load_names()
     ov = load_overrides()
+    eliz = load_elizabethan()
 
-    words = set(stress) | nouns | adjs | set(pol) | set(names) | set(ov) | FUNCTION_WORDS
+    words = set(stress) | nouns | adjs | set(pol) | set(names) | set(ov) | set(eliz) | FUNCTION_WORDS
     entries = []
     for w in sorted(words):
         flags = (NOUN if w in nouns else 0) | (ADJ if w in adjs else 0) | (NAME if w in names else 0) \
@@ -116,6 +129,9 @@ def main():
         p = pol.get(w, 0)
         st = "|".join(stress[w]) if w in stress else heuristic_stress(w)
         if w in names and names[w]: st = names[w]   # the verse's own pronunciation of a name
+        if w in eliz:  # Elizabethan stress shifts are alternatives, not replacements
+            have = st.split("|")
+            st = "|".join(have + [o for o in eliz[w].split("|") if o not in have])
         if w in ov:
             f2, p2, s2 = ov[w]
             if f2:

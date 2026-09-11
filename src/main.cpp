@@ -33,16 +33,21 @@ static void usage() {
                "  -frhyme-scheme=SCHEME     require a rhyme scheme, e.g. AABB or \"ABAB CDCD EFEF GG\"; the\n"
                "                            scheme repeats over each scene's verse lines (with --scan-text,\n"
                "                            over each blank-line-separated block of the file)\n"
+               "  -fnear-rhymes             accept Elizabethan near-rhymes (come/doom, were/bear)\n"
+               "  -fsonnet                  every speech must be a sonnet: fourteen lines rhyming\n"
+               "                            ABAB CDCD EFEF GG (and, with -fpentameter, scanning)\n"
                "  -fsyntax-only             parse and scan, produce nothing\n"
                "  --scan                    print the scansion of every line of dialogue and exit\n"
                "  --scan-text               scan a plain text file (every line is verse) and exit\n"
+               "  --suggest-stress          for each failing line of a text file, print the single-word\n"
+               "                            stress changes that would make it scan (corpus mining)\n"
                "  --lexicon-size            print the number of words in the lexicon and exit\n"
                "  --runtime <dir>           where to find libsplrt.a (default: " SPLC_RUNTIME_DIR ")\n");
 }
 
 int main(int argc, char **argv) {
   std::string input, output, runtimeDir = SPLC_RUNTIME_DIR;
-  bool compileOnly = false, emitLLVM = false, syntaxOnly = false, scanOnly = false, scanText = false;
+  bool compileOnly = false, emitLLVM = false, syntaxOnly = false, scanOnly = false, scanText = false, suggest = false;
   int optLevel = 2;
   spl::ScansionOptions sopts;
   for (int i = 1; i < argc; ++i) {
@@ -54,6 +59,7 @@ int main(int argc, char **argv) {
     else if (a == "-fsyntax-only") syntaxOnly = true;
     else if (a == "--scan") scanOnly = true;
     else if (a == "--scan-text") scanText = true;
+    else if (a == "--suggest-stress") { scanText = true; suggest = true; }
     else if (a == "--lexicon-size") { std::printf("%zu words\n", spl::Lexicon::size()); return 0; }
     else if (a == "--runtime" && i + 1 < argc) runtimeDir = argv[++i];
     else if (a == "-fpentameter=off") sopts.mode = spl::ScansionOptions::Off;
@@ -65,6 +71,8 @@ int main(int argc, char **argv) {
     else if (a == "-fno-prose-exemption") sopts.proseExemption = false;
     else if (a == "-fcouplets") sopts.couplets = true;
     else if (a.rfind("-frhyme-scheme=", 0) == 0) sopts.rhymeScheme = a.substr(15);
+    else if (a == "-fnear-rhymes") sopts.nearRhymes = true;
+    else if (a == "-fsonnet") sopts.sonnets = true;
     else if (a == "-h" || a == "--help") { usage(); return 0; }
     else if (a[0] == '-') { std::fprintf(stderr, "splc: unknown option %s\n", a.c_str()); usage(); return 2; }
     else if (input.empty()) input = a;
@@ -120,6 +128,12 @@ int main(int argc, char **argv) {
       std::printf("%d rhyme violation(s) in %d stanza(s)\n", rhymeFails, blocks);
       return 0;
     }
+    if (suggest) {  // mine stress shifts: print "word=pattern" for every fix of a failing line
+      for (const spl::DialogueLine &dl : lines)
+        if (!sc.scanLine(dl).scans)
+          for (const std::string &s : sc.suggestStress(dl)) std::printf("%s\n", s.c_str());
+      return 0;
+    }
     int ok = 0;
     for (const spl::DialogueLine &dl : lines) {
       spl::ScansionResult r = sc.scanLine(dl);
@@ -135,6 +149,7 @@ int main(int argc, char **argv) {
   scansion.check(prog);
   scansion.checkCouplets(prog);
   scansion.checkRhymeScheme(prog);
+  scansion.checkSonnets(prog);
   if (diag.errors()) {
     std::fprintf(stderr, "%d error(s) generated.\n", diag.errors());
     return 1;
