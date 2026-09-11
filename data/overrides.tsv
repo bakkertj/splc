@@ -1,0 +1,67 @@
+# word	flags (noun,adj,name,function)	polarity (-1/0/1)	stress options ("10|1", x = flexible)
+# Hand-maintained; anything here wins over the generated sources.
+# --- SPL semantics: the canonical zero words ---
+nothing	noun	0	10
+zero	noun	0	10
+# --- SPL positive/negative nouns whose VADER polarity is missing or wrong ---
+cat	noun	1	1
+face	noun	1	1
+flower	noun	1	10|1
+heaven	noun	1	10|1
+king	noun	1	1
+lord	noun	1	1
+rose	noun	1	1
+summer's	noun	1	10
+codpiece	noun	-1	10
+pig	noun	-1	1
+toad	noun	-1	1
+hog	noun	-1	1
+devil	noun	-1	10
+wolf	noun	-1	1
+hound	noun	-1	1
+snake	noun	-1	1
+worm	noun	-1	1
+# --- adjectives ---
+lovely	adj	1	10
+sweet	adj	1	1
+cunning	adj	1	10
+amazing	adj	1	010
+blossoming	adj	1	100
+bad	adj	-1	1
+vile	adj	-1	1
+rotten	adj	-1	10
+little	adj	0	10
+big	adj	0	1
+old	adj	0	1
+# --- Elizabethan forms that CMUdict lacks (stress only) ---
+o'er	function		x
+e'er	function		x
+ne'er	function		x
+'gainst	function		x
+'twixt	function		x
+'tis	function		x
+'twas	function		x
+'twere	function		x
+prithee	function		10
+didst	function		x
+canst	function		x
+dost	function		x
+doth	function		x
+hath	function		x
+wilt	function		x
+shalt	function		x
+hast	function		x
+wast	function		x
+wouldst	function		x
+shouldst	function		x
+couldst	function		x
+sirrah	noun	-1	10
+methinks			01
+withal	function		01
+# --- reflexives: Shakespeare scans these iambically (thy-SELF) ---
+thyself	function		01
+myself	function		01
+yourself	function		01
+himself	function		01
+herself	function		01
+itself	function		01
