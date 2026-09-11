@@ -114,9 +114,11 @@ The grammar is SPL 1.2.1 with these liberties:
 | `tools/gen_lexicon.py` | builds `generated/Lexicon.inc` from `data/` |
 | `tools/sonnets_to_text.py` | turns the shakespeare.mit.edu sonnet pages into `shakespeare/sonnets.txt` and `sonnets_lines.txt` |
 | `tools/mine_stress.py` | runs `--suggest-stress` over corpora and proposes `elizabethan_stress.tsv` lines with counts |
+| `tools/play_to_lines.py` | extracts the verse lines of a play (shakespeare.mit.edu HTML or plain text) for the same tools |
+| `docs/writing-a-sonnet.md` | how `examples/sonnet.spl` was written, and how to write your own |
 | `data/` | CMUdict, WordNet index files, VADER, `shakespeare_names.txt`, `name_stress.tsv` (596 Shakespearean names with their metrical stress), `elizabethan_stress.tsv` (words Shakespeare stressed differently), `overrides.tsv` |
 | `generated/Lexicon.inc` | the word table compiled into `splc` (about 5.5 MB of source, about 2 MB in the binary) |
-| `shakespeare/` | the 154 sonnets as plain text, used for calibration |
+| `shakespeare/` | the 154 sonnets and the verse lines of Richard II as plain text, used for calibration |
 | `examples/` | `hello.spl` (prose), `hello_verse.spl` (strict pentameter), `primes.spl` (loops, I/O, stack), `fizzbuzz.spl`, `reverse.spl` (a string reversed through the stack), `couplets.spl` (couplets and a prose-speaking servant), `sonnet.spl` (two speakers, a sonnet each) |
 | `test/` | the two shell helpers `ctest` uses; the thirteen tests are declared in `CMakeLists.txt` |
 
@@ -182,7 +184,8 @@ With `--scan-text` the scheme is applied to each blank-line-separated stanza of 
 
 **Sonnets.** `-fsonnet` requires every verse speech to be a sonnet: fourteen lines rhyming
 ABAB CDCD EFEF GG, and scanning if `-fpentameter` is on. `examples/sonnet.spl` is a
-program of two sonnets, one per speaker; Juliet's prints `Hi!` and Romeo's answers `Ho!`:
+program of two sonnets, one per speaker; Juliet's prints `Hi!` and Romeo's answers `Ho!`
+(`docs/writing-a-sonnet.md` explains how it was written):
 
 ```
 $ splc -fsonnet -fpentameter=error examples/sonnet.spl -o hi && ./hi
@@ -193,8 +196,9 @@ Ho!
 ## Calibration
 
 The reference corpora are `shakespeare/sonnets_lines.txt` (all 154 sonnets, 2,155 lines,
-made from the shakespeare.mit.edu pages by `tools/sonnets_to_text.py`) and Richard II
-(entirely verse, 2,606 lines of six or more words, from the same site). The controls are
+made from the shakespeare.mit.edu pages by `tools/sonnets_to_text.py`) and
+`shakespeare/richard2_lines.txt` (Richard II is entirely verse; 2,606 lines of six or more
+words, extracted with `tools/play_to_lines.py`). The controls are
 the sonnet lines with their words shuffled, and Hamlet's prose wrapped to ten-ish
 syllables.
 

@@ -2,6 +2,7 @@
 """Propose data/elizabethan_stress.tsv lines from a verse corpus.
 
 usage: mine_stress.py [--splc build/splc] [--min N] corpus.txt [corpus2.txt ...]
+       e.g. mine_stress.py shakespeare/sonnets_lines.txt shakespeare/richard2_lines.txt
 
 Runs `splc --suggest-stress` over each corpus (one verse line per line), counts how
 often each word=pattern fix recurs, drops the words the table already knows and the
