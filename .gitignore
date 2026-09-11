@@ -4,3 +4,5 @@ build/
 a.out
 .DS_Store
 Claude outputs/
+build-mac/
+build_mac.log

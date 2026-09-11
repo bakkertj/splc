@@ -173,7 +173,7 @@ struct CodeGen::Impl {
 
     // character name table for runtime diagnostics
     std::vector<llvm::Constant *> names;
-    for (const Character &c : prog.characters) names.push_back(b.CreateGlobalStringPtr(c.name, "name"));
+    for (const Character &c : prog.characters) names.push_back(b.CreateGlobalString(c.name, "name"));
     llvm::ArrayType *arrTy = llvm::ArrayType::get(llvm::PointerType::getUnqual(ctx), names.size());
     llvm::GlobalVariable *nameTab = new llvm::GlobalVariable(*mod, arrTy, true, llvm::GlobalValue::PrivateLinkage,
                                                  llvm::ConstantArray::get(arrTy, names), "dramatis_personae");
