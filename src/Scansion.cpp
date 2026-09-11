@@ -1,6 +1,7 @@
 #include "Scansion.h"
 
 #include <climits>
+#include <cctype>
 #include <cstring>
 #include <functional>
 #include <set>
@@ -102,10 +103,13 @@ int Scansion::check(const Program &prog) {
   if (opts_.mode == ScansionOptions::Off) return 0;
   int failed = 0;
   for (const Act &a : prog.acts)
-    for (const Scene &s : a.scenes)
+    for (const Scene &s : a.scenes) {
+      bool inProse = false;
       for (const Item &it : s.items) {
+        if (it.kind == Item::Prose) { inProse = true; continue; }
+        if (it.kind == Item::Verse) { inProse = false; continue; }
         if (it.kind != Item::Speech) continue;
-        if (opts_.proseExemption && prog.characters[it.speaker].prose) continue;
+        if (inProse || (opts_.proseExemption && prog.characters[it.speaker].prose)) continue;
         for (size_t li = 0; li < it.lines.size(); ++li) {
           const DialogueLine &dl = it.lines[li];
           if ((int)dl.tokens.size() < opts_.minWords) continue;
@@ -124,6 +128,52 @@ int Scansion::check(const Program &prog) {
           else diag_.warning(loc, msg);
         }
       }
+    }
+  return failed;
+}
+
+std::vector<const DialogueLine *> Scansion::verseLines(const Program &prog, const Scene &s) const {
+  std::vector<const DialogueLine *> out;
+  bool inProse = false;
+  for (const Item &it : s.items) {
+    if (it.kind == Item::Prose) inProse = true;
+    else if (it.kind == Item::Verse) inProse = false;
+    else if (it.kind == Item::Speech && !inProse && !(opts_.proseExemption && prog.characters[it.speaker].prose))
+      for (const DialogueLine &dl : it.lines) out.push_back(&dl);
+  }
+  return out;
+}
+
+int Scansion::checkRhymeScheme(const std::vector<const DialogueLine *> &lines, const std::string &scheme) {
+  std::string sch;
+  for (char c : scheme) if (std::isalpha((unsigned char)c)) sch.push_back((char)std::toupper((unsigned char)c));
+  if (sch.empty()) return 0;
+  int failed = 0;
+  for (size_t base = 0; base < lines.size(); base += sch.size()) {
+    // within this block, every line must rhyme with the previous line carrying the same letter
+    for (size_t i = 0; i < sch.size() && base + i < lines.size(); ++i) {
+      for (size_t j = 0; j < i; ++j) {
+        if (sch[j] != sch[i]) continue;
+        const Token &w1 = t_[lines[base + j]->tokens.back()], &w2 = t_[lines[base + i]->tokens.back()];
+        if (!Lexicon::rhymes(w1.text, w2.text)) {
+          ++failed;
+          std::string msg = "line " + std::to_string(i + 1) + " of the stanza should rhyme with line " + std::to_string(j + 1) +
+                            " (" + sch + "): '" + w1.text + "' / '" + w2.text + "'";
+          if (opts_.mode == ScansionOptions::Error) diag_.error(w2.loc, msg);
+          else diag_.warning(w2.loc, msg);
+        }
+        break;  // compare with the nearest earlier partner only
+      }
+    }
+  }
+  return failed;
+}
+
+int Scansion::checkRhymeScheme(const Program &prog) {
+  if (opts_.rhymeScheme.empty()) return 0;
+  int failed = 0;
+  for (const Act &a : prog.acts)
+    for (const Scene &s : a.scenes) failed += checkRhymeScheme(verseLines(prog, s), opts_.rhymeScheme);
   return failed;
 }
 

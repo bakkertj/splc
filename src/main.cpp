@@ -30,6 +30,9 @@ static void usage() {
                "  -fno-prose-exemption      scan low-born characters too (by default servants, clowns\n"
                "                            and fools, as described in the dramatis personae, speak prose)\n"
                "  -fcouplets                require every scene to end in a rhyming couplet\n"
+               "  -frhyme-scheme=SCHEME     require a rhyme scheme, e.g. AABB or \"ABAB CDCD EFEF GG\"; the\n"
+               "                            scheme repeats over each scene's verse lines (with --scan-text,\n"
+               "                            over each blank-line-separated block of the file)\n"
                "  -fsyntax-only             parse and scan, produce nothing\n"
                "  --scan                    print the scansion of every line of dialogue and exit\n"
                "  --scan-text               scan a plain text file (every line is verse) and exit\n"
@@ -61,6 +64,7 @@ int main(int argc, char **argv) {
     else if (a == "-fno-initial-trochee") sopts.allowInitialTrochee = false;
     else if (a == "-fno-prose-exemption") sopts.proseExemption = false;
     else if (a == "-fcouplets") sopts.couplets = true;
+    else if (a.rfind("-frhyme-scheme=", 0) == 0) sopts.rhymeScheme = a.substr(15);
     else if (a == "-h" || a == "--help") { usage(); return 0; }
     else if (a[0] == '-') { std::fprintf(stderr, "splc: unknown option %s\n", a.c_str()); usage(); return 2; }
     else if (input.empty()) input = a;
@@ -103,6 +107,19 @@ int main(int argc, char **argv) {
             lines.insert(lines.end(), it.lines.begin(), it.lines.end());
           }
     }
+    if (scanText && !so.rhymeScheme.empty()) {
+      // blank lines separate stanzas
+      std::vector<const spl::DialogueLine *> block;
+      int rhymeFails = 0, blocks = 0;
+      auto flush = [&]() { if (!block.empty()) { ++blocks; rhymeFails += sc.checkRhymeScheme(block, so.rhymeScheme); block.clear(); } };
+      for (const spl::DialogueLine &dl : lines) {
+        if (!block.empty() && dl.line > block.back()->line + 1) flush();
+        block.push_back(&dl);
+      }
+      flush();
+      std::printf("%d rhyme violation(s) in %d stanza(s)\n", rhymeFails, blocks);
+      return 0;
+    }
     int ok = 0;
     for (const spl::DialogueLine &dl : lines) {
       spl::ScansionResult r = sc.scanLine(dl);
@@ -117,6 +134,7 @@ int main(int argc, char **argv) {
   spl::Scansion scansion(toks, diag, sopts);
   scansion.check(prog);
   scansion.checkCouplets(prog);
+  scansion.checkRhymeScheme(prog);
   if (diag.errors()) {
     std::fprintf(stderr, "%d error(s) generated.\n", diag.errors());
     return 1;

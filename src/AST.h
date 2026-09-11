@@ -48,7 +48,7 @@ struct DialogueLine {  // one physical source line inside a speech, for scansion
 };
 
 struct Item {  // a speech or a stage direction, in scene order
-  enum Kind { Speech, Enter, Exit, Exeunt } kind;
+  enum Kind { Speech, Enter, Exit, Exeunt, Prose, Verse } kind;  // [Prose]/[Verse] switch the metre for what follows
   Loc loc;
   int speaker = -1;                 // Speech
   std::vector<SentencePtr> sentences;

@@ -17,6 +17,7 @@ struct ScansionOptions {
   bool allowInitialTrochee = true;
   bool proseExemption = true;   // low-born characters may speak prose
   bool couplets = false;        // warn when a scene does not end in a rhyming couplet
+  std::string rhymeScheme;      // e.g. "AABB" or "ABAB CDCD EFEF GG": applied to each scene's verse lines, repeating
 };
 
 struct ScansionResult {
@@ -35,6 +36,11 @@ class Scansion {
   // Returns the number of lines that failed.
   int check(const Program &prog);
   int checkCouplets(const Program &prog);
+  // Check a run of verse lines against a rhyme scheme; blocks of the scheme's length repeat.
+  int checkRhymeScheme(const std::vector<const DialogueLine *> &lines, const std::string &scheme);
+  int checkRhymeScheme(const Program &prog);
+  // The verse lines of a scene (prose speeches and [Prose] sections skipped), in order.
+  std::vector<const DialogueLine *> verseLines(const Program &prog, const Scene &s) const;
   ScansionResult scanLine(const DialogueLine &line) const;
 
  private:

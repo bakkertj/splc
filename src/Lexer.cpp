@@ -37,6 +37,11 @@ std::vector<Token> Lexer::tokenize() {
         while (j > i + 1 && s[j - 1] == '-') --j;
         t.kind = Tok::Word;
         t.text = s.substr(i, j - i);
+        // quotation marks written as apostrophes: 'Will' -> Will; a bare ' is not a word
+        // a trailing ' is a closing quote unless it marks a plural possessive (lords')
+        if (t.text.size() > 1 && t.text.back() == '\'' && t.text[t.text.size() - 2] != 's') t.text.pop_back();
+        if (t.text.size() > 1 && t.text[0] == '\'' && t.text.back() == '\'') { t.text = t.text.substr(1, t.text.size() - 2); t.loc.col += 1; }
+        if (t.text == "'" || t.text.empty()) { i = j; continue; }
         t.lower = Lexicon::normalize(t.text, &t.graveAccent);
         i = j;
       } else if (std::strchr(".,!?:;[]()", c)) {

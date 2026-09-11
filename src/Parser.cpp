@@ -194,8 +194,10 @@ void Parser::parseStageDirection(Scene &scene) {
   if (accept("enter")) item.kind = Item::Enter;
   else if (accept("exit")) item.kind = Item::Exit;
   else if (accept("exeunt")) item.kind = Item::Exeunt;
+  else if (accept("prose")) item.kind = Item::Prose;
+  else if (accept("verse")) item.kind = Item::Verse;
   else {
-    diag_.error(cur().loc, "stage direction must begin with Enter, Exit or Exeunt");
+    diag_.error(cur().loc, "stage direction must begin with Enter, Exit, Exeunt, Prose or Verse");
     while (!atEnd() && !isPunct(']')) ++pos_;
     acceptPunct(']');
     return;
@@ -213,6 +215,8 @@ void Parser::parseStageDirection(Scene &scene) {
     pos_ += len;
   }
   if (!acceptPunct(']')) diag_.error(cur().loc, "expected ']' to close the stage direction");
+  if ((item.kind == Item::Prose || item.kind == Item::Verse) && !item.characters.empty())
+    diag_.error(item.loc, "[Prose] and [Verse] take no characters; they apply to every speech that follows");
   if (item.kind == Item::Enter && item.characters.empty()) diag_.error(item.loc, "Enter whom?");
   if (item.kind == Item::Exit && item.characters.size() != 1) diag_.error(item.loc, "Exit takes exactly one character (use Exeunt for several)");
   scene.items.push_back(std::move(item));

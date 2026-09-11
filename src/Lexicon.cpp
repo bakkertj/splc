@@ -158,6 +158,22 @@ static std::string spellingRhyme(const std::string &w) {
   return j < w.size() ? w.substr(j) : w;
 }
 
+// A rhyme key is CMU phones run together ("owmiyow").  Vowel phones are the
+// two-letter codes beginning with a vowel letter; consonants never do, so the
+// string parses unambiguously.  This returns the key from its LAST vowel: the
+// sonnets rhyme "thee" with "posterity" on the final syllable, stress or no.
+static std::string finalSyllable(const std::string &key) {
+  static const char *two[] = {"ch", "dh", "hh", "jh", "ng", "sh", "th", "zh"};
+  size_t i = 0, lastVowel = std::string::npos;
+  while (i < key.size()) {
+    if (std::strchr("aeiou", key[i])) { lastVowel = i; i += 2; continue; }
+    bool isTwo = false;
+    for (const char *t : two) if (key.compare(i, 2, t) == 0) { isTwo = true; break; }
+    i += isTwo ? 2 : 1;
+  }
+  return lastVowel == std::string::npos ? key : key.substr(lastVowel);
+}
+
 bool Lexicon::rhymes(const std::string &a, const std::string &b) {
   std::string wa = normalize(a), wb = normalize(b);
   if (wa == wb) return true;  // identical rhyme: the bard allows it
@@ -166,12 +182,21 @@ bool Lexicon::rhymes(const std::string &a, const std::string &b) {
     std::vector<std::string> ra, rb;
     splitOptions(ea->rhyme, ra);
     splitOptions(eb->rhyme, rb);
+    // voicing was looser in Elizabethan rhyme: is/amiss, lov'd/soft
+    auto unvoice = [](std::string k) {
+      for (char &c : k) { if (c == 'z') c = 's'; else if (c == 'd') c = 't'; else if (c == 'v') c = 'f'; }
+      return k;
+    };
     for (const std::string &x : ra)
       for (const std::string &y : rb)
-        if (x == y) return true;
+        if (x == y || unvoice(finalSyllable(x)) == unvoice(finalSyllable(y))) return true;
     // Elizabethan eye-rhymes and shifted vowels (love/move, eye/die): accept a spelling rhyme too
   }
-  return spellingRhyme(wa) == spellingRhyme(wb);
+  auto spell = [](std::string w) {
+    if (endsWith(w, "'d")) w = w.substr(0, w.size() - 2) + "ed";
+    return spellingRhyme(w);
+  };
+  return spell(wa) == spell(wb);
 }
 
 }  // namespace spl

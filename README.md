@@ -42,6 +42,7 @@ splc [options] play.spl
   -fno-initial-trochee          forbid an inverted first foot
   -fno-prose-exemption          scan low-born characters too (see below)
   -fcouplets                    require every scene to end in a rhyming couplet
+  -frhyme-scheme=SCHEME         require a rhyme scheme, e.g. AABB or "ABAB CDCD EFEF GG"
   -fsyntax-only                 parse and scan only
   --scan                        print the scansion of every line of dialogue
   --scan-text                   scan any text file, one verse line per line
@@ -60,7 +61,7 @@ splc [options] play.spl
 | `src/Scansion` | dynamic-programming pentameter check with Elizabethan syllable rules |
 | `src/CodeGen` | LLVM IR via `IRBuilder`; acts and scenes are basic blocks; character values are a module global so the standard `-O2` pipeline folds and threads them; stage state is a runtime concern |
 | `runtime/splrt.c` | characters, stacks, stage tracking, I/O, checked arithmetic |
-| `examples/` | `hello.spl` (prose), `hello_verse.spl` (strict pentameter), `primes.spl` (loops, I/O, stack), `couplets.spl` (couplets and a prose-speaking servant) |
+| `examples/` | `hello.spl` (prose), `hello_verse.spl` (strict pentameter), `primes.spl` (loops, I/O, stack), `fizzbuzz.spl`, `reverse.spl` (a string reversed through the stack), `couplets.spl` (couplets and a prose-speaking servant) |
 
 ## Language notes
 
@@ -76,6 +77,8 @@ The grammar is SPL 1.2.1 with these liberties:
   `better/worse/bigger/smaller…`. A neutral comparative with no size sense is an error.
 * A sentence may open with a poetic connective (`And`, `But`, `O`, `Now`, `Then`, `Yet`).
 * `Recall` ignores the rest of its sentence, as in the original.
+* `[Prose]` and `[Verse]` are accepted as stage directions: every speech after `[Prose]` is
+  exempt from scansion until `[Verse]`, whoever speaks. They generate no code.
 
 ## Scansion rules
 
@@ -101,11 +104,27 @@ prose. `splc` reads each character's station from the dramatis personae: a descr
 containing *servant, clown, fool, porter, nurse, gravedigger, peasant, shepherd, tapster,
 citizen, rogue…* (or the word *prose*) exempts that character from scansion; the word
 *verse* overrides. `--scan` marks such lines `prose`; `-fno-prose-exemption` scans everyone.
+A `[Prose]` stage direction does the same for a stretch of a scene, and `[Verse]` ends it.
 
 **Couplets.** With `-fcouplets`, every scene must end in a rhyming couplet, meaning the last two
 lines of dialogue, whoever speaks them. Rhymes are compared on CMU phones from the last
 stressed vowel; an identical word rhymes (the bard allows it), and a spelling rhyme is
-accepted for eye-rhymes and shifted vowels (*love/move*).
+accepted for eye-rhymes and shifted vowels (*love/move*). Elizabethan latitude is built in:
+the final syllable may carry the rhyme whatever the stress (*thee/posterity*), and voicing
+is ignored (*is/amiss*).
+
+**Rhyme schemes.** `-frhyme-scheme=SCHEME` checks each scene's verse lines against a
+pattern that repeats: `AABB` for couplets throughout, `"ABAB CDCD EFEF GG"` for sonnets.
+With `--scan-text` the scheme is applied to each blank-line-separated stanza of the file,
+which is how the rhyme detector is calibrated:
+
+```
+grep -v '^Sonnet' shakespeare/sonnets.txt | splc --scan-text "-frhyme-scheme=ABAB CDCD EFEF GG" /dev/stdin
+80 rhyme violation(s) in 154 stanza(s)      # 1,078 rhyme pairs: 93% recognised
+```
+
+The misses are Shakespeare's own near-rhymes (*come/doom*, *tongue/wrong*). The same
+lines with their words shuffled produce 1,004 violations.
 
 ### Calibration
 

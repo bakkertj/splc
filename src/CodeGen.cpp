@@ -44,26 +44,45 @@ struct CodeGen::Impl {
   llvm::Type *i64() { return llvm::Type::getInt64Ty(ctx); }
   llvm::Type *i32() { return llvm::Type::getInt32Ty(ctx); }
 
+  // What each runtime function touches, so the optimizer can move and merge calls.
+  //   Stage   : the runtime's own bookkeeping (who is on stage, the stacks); invisible to
+  //             the module, so `inaccessiblemem`.  spl_addressee only reads it.
+  //   IO      : stdout/stdin state, also inaccessible memory; keeps I/O in order.
+  //   Pure    : arithmetic helpers touch no memory at all.  None of them is `willreturn`,
+  //             because every one may abort the play with a runtime error.
+  //   Default : spl_pop writes a character's value through the pointer given to spl_init,
+  //             which is module memory, so it keeps the conservative default.
+  enum class Mem { Default, StageRead, StageWrite, IO, Pure };
   void declareRuntime() {
-    auto decl = [&](const char *name, llvm::Type *ret, std::vector<llvm::Type *> args) {
-      rt[name] = mod->getOrInsertFunction(name, llvm::FunctionType::get(ret, args, false));
+    auto decl = [&](const char *name, llvm::Type *ret, std::vector<llvm::Type *> args, Mem mem) {
+      llvm::FunctionCallee fc = mod->getOrInsertFunction(name, llvm::FunctionType::get(ret, args, false));
+      auto *f = llvm::cast<llvm::Function>(fc.getCallee());
+      f->addFnAttr(llvm::Attribute::NoUnwind);
+      switch (mem) {
+        case Mem::Default: break;
+        case Mem::StageRead: f->setMemoryEffects(llvm::MemoryEffects::inaccessibleMemOnly(llvm::ModRefInfo::Ref)); break;
+        case Mem::StageWrite:
+        case Mem::IO: f->setMemoryEffects(llvm::MemoryEffects::inaccessibleMemOnly()); break;
+        case Mem::Pure: f->setMemoryEffects(llvm::MemoryEffects::none()); break;
+      }
+      rt[name] = fc;
     };
     llvm::Type *ptr = llvm::PointerType::getUnqual(ctx);
-    decl("spl_init", llvm::Type::getVoidTy(ctx), {i32(), ptr, ptr});
-    decl("spl_enter", llvm::Type::getVoidTy(ctx), {i32()});
-    decl("spl_exit", llvm::Type::getVoidTy(ctx), {i32()});
-    decl("spl_exeunt_all", llvm::Type::getVoidTy(ctx), {});
-    decl("spl_addressee", i32(), {i32()});
-    decl("spl_push", llvm::Type::getVoidTy(ctx), {i32(), i64()});
-    decl("spl_pop", llvm::Type::getVoidTy(ctx), {i32()});
-    decl("spl_out_char", llvm::Type::getVoidTy(ctx), {i64()});
-    decl("spl_out_int", llvm::Type::getVoidTy(ctx), {i64()});
-    decl("spl_in_char", i64(), {});
-    decl("spl_in_int", i64(), {});
-    decl("spl_div", i64(), {i64(), i64()});
-    decl("spl_mod", i64(), {i64(), i64()});
-    decl("spl_sqrt", i64(), {i64()});
-    decl("spl_factorial", i64(), {i64()});
+    decl("spl_init", llvm::Type::getVoidTy(ctx), {i32(), ptr, ptr}, Mem::Default);
+    decl("spl_enter", llvm::Type::getVoidTy(ctx), {i32()}, Mem::StageWrite);
+    decl("spl_exit", llvm::Type::getVoidTy(ctx), {i32()}, Mem::StageWrite);
+    decl("spl_exeunt_all", llvm::Type::getVoidTy(ctx), {}, Mem::StageWrite);
+    decl("spl_addressee", i32(), {i32()}, Mem::StageRead);
+    decl("spl_push", llvm::Type::getVoidTy(ctx), {i32(), i64()}, Mem::StageWrite);
+    decl("spl_pop", llvm::Type::getVoidTy(ctx), {i32()}, Mem::Default);
+    decl("spl_out_char", llvm::Type::getVoidTy(ctx), {i64()}, Mem::IO);
+    decl("spl_out_int", llvm::Type::getVoidTy(ctx), {i64()}, Mem::IO);
+    decl("spl_in_char", i64(), {}, Mem::IO);
+    decl("spl_in_int", i64(), {}, Mem::IO);
+    decl("spl_div", i64(), {i64(), i64()}, Mem::Pure);
+    decl("spl_mod", i64(), {i64(), i64()}, Mem::Pure);
+    decl("spl_sqrt", i64(), {i64()}, Mem::Pure);
+    decl("spl_factorial", i64(), {i64()}, Mem::Pure);
   }
 
   llvm::Value *speakerId() { return llvm::ConstantInt::get(i32(), curSpeaker); }
@@ -218,6 +237,9 @@ struct CodeGen::Impl {
               if (it.characters.empty()) b.CreateCall(rt["spl_exeunt_all"]);
               else for (int c : it.characters) b.CreateCall(rt["spl_exit"], {llvm::ConstantInt::get(i32(), c)});
               break;
+            case Item::Prose:
+            case Item::Verse:
+              break;  // metre is the scansion pass's business
             case Item::Speech:
               curSpeaker = it.speaker;
               curYou = nullptr;

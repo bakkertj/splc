@@ -7,3 +7,4 @@ shakespeare/shakespeare.mit.edu/
 Claude outputs/
 build-mac/
 build_mac.log
+*.swp
