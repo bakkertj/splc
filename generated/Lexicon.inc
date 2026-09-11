@@ -22710,7 +22710,7 @@
 {"caladiums",0,0,"0100","eydiyahmz"},
 {"calaf",0,0,"10","aelahf"},
 {"calahan",0,0,"100","aelahhhaen"},
-{"calais",1,0,"01","ey"},
+{"calais",1,0,"01|10","ey"},
 {"calamagrostis",1,0,"xxxxx",""},
 {"calamander",0,0,"10x0","aelahmaender"},
 {"calamari",1,0,"0010","aariy"},

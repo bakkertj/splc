@@ -113,10 +113,11 @@ The grammar is SPL 1.2.1 with these liberties:
 | `runtime/splrt.c` | stage tracking, stacks, I/O, checked arithmetic, runtime errors |
 | `tools/gen_lexicon.py` | builds `generated/Lexicon.inc` from `data/` |
 | `tools/sonnets_to_text.py` | turns the shakespeare.mit.edu sonnet pages into `shakespeare/sonnets.txt` and `sonnets_lines.txt` |
+| `tools/mine_stress.py` | runs `--suggest-stress` over corpora and proposes `elizabethan_stress.tsv` lines with counts |
 | `data/` | CMUdict, WordNet index files, VADER, `shakespeare_names.txt`, `name_stress.tsv` (596 Shakespearean names with their metrical stress), `elizabethan_stress.tsv` (words Shakespeare stressed differently), `overrides.tsv` |
 | `generated/Lexicon.inc` | the word table compiled into `splc` (about 5.5 MB of source, about 2 MB in the binary) |
 | `shakespeare/` | the 154 sonnets as plain text, used for calibration |
-| `examples/` | `hello.spl` (prose), `hello_verse.spl` (strict pentameter), `primes.spl` (loops, I/O, stack), `fizzbuzz.spl`, `reverse.spl` (a string reversed through the stack), `couplets.spl` (couplets and a prose-speaking servant), `sonnet.spl` (a program that is one sonnet) |
+| `examples/` | `hello.spl` (prose), `hello_verse.spl` (strict pentameter), `primes.spl` (loops, I/O, stack), `fizzbuzz.spl`, `reverse.spl` (a string reversed through the stack), `couplets.spl` (couplets and a prose-speaking servant), `sonnet.spl` (two speakers, a sonnet each) |
 | `test/` | the two shell helpers `ctest` uses; the thirteen tests are declared in `CMakeLists.txt` |
 
 ## How a play is compiled
@@ -181,11 +182,12 @@ With `--scan-text` the scheme is applied to each blank-line-separated stanza of 
 
 **Sonnets.** `-fsonnet` requires every verse speech to be a sonnet: fourteen lines rhyming
 ABAB CDCD EFEF GG, and scanning if `-fpentameter` is on. `examples/sonnet.spl` is a
-program that is one sonnet; it prints `Hi!`:
+program of two sonnets, one per speaker; Juliet's prints `Hi!` and Romeo's answers `Ho!`:
 
 ```
 $ splc -fsonnet -fpentameter=error examples/sonnet.spl -o hi && ./hi
 Hi!
+Ho!
 ```
 
 ## Calibration
@@ -223,7 +225,9 @@ lines with their words shuffled produce 1,004 violations (974 with `-fnear-rhyme
 `--suggest-stress` is how `data/elizabethan_stress.tsv` was seeded: run over a corpus it
 lists, for every failing line, the single words whose stress would have to move for the
 line to scan; the words that recur (*antique*, *therein*, *welcome*) are real Elizabethan
-stress, the rest are mid-line trochees.
+stress, the rest are mid-line trochees. `tools/mine_stress.py corpus.txt ...` wraps it:
+it counts the suggestions, drops readings the table already has and the suffix-stressed
+noise, and prints candidate `.tsv` lines with their counts for you to paste in.
 
 ## Regenerating the lexicon and the corpus
 
