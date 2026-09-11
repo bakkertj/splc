@@ -15,6 +15,8 @@ struct ScansionOptions {
   int minWords = 3;         // shorter lines (shared lines, "Ay.") are not checked
   bool allowFeminine = true;
   bool allowInitialTrochee = true;
+  bool proseExemption = true;   // low-born characters may speak prose
+  bool couplets = false;        // warn when a scene does not end in a rhyming couplet
 };
 
 struct ScansionResult {
@@ -32,6 +34,7 @@ class Scansion {
       : t_(toks), diag_(diag), opts_(opts) {}
   // Returns the number of lines that failed.
   int check(const Program &prog);
+  int checkCouplets(const Program &prog);
   ScansionResult scanLine(const DialogueLine &line) const;
 
  private:

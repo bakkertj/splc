@@ -13,6 +13,7 @@ struct Character {
   std::string description;
   Loc loc;
   int id = 0;
+  bool prose = false;  // low-born by their description: speaks prose, exempt from scansion
 };
 
 // ---- values -----------------------------------------------------------------

@@ -2,7 +2,7 @@
 
 `splc` compiles plays written in the [Shakespeare Programming Language](https://shakespearelang.com)
 to native code through LLVM. Unlike the original, it understands a large English
-vocabulary (171,511 words: all of CMUdict, WordNet nouns and adjectives, Shakespeare's
+vocabulary (171,534 words: all of CMUdict, WordNet nouns and adjectives, Shakespeare's
 dramatis personae) rather than a few hundred hand-picked words, and it can check —
 or insist — that every line of dialogue is in iambic pentameter.
 
@@ -35,10 +35,13 @@ On macOS with Homebrew LLVM: `-DLLVM_DIR=$(brew --prefix llvm)/lib/cmake/llvm`.
 splc [options] play.spl
   -o <file>                     output (default a.out; play.o with -c; play.ll with -emit-llvm)
   -c / -emit-llvm               stop at an object file / LLVM IR
+  -O0 -O1 -O2 -O3               optimisation level (default -O2)
   -fpentameter=off|warn|error   scansion check (default warn)
   -fpentameter-tolerance=N      stressed syllables allowed out of place (default 1)
   -fno-feminine-endings         forbid an 11th unstressed syllable
   -fno-initial-trochee          forbid an inverted first foot
+  -fno-prose-exemption          scan low-born characters too (see below)
+  -fcouplets                    require every scene to end in a rhyming couplet
   -fsyntax-only                 parse and scan only
   --scan                        print the scansion of every line of dialogue
   --scan-text                   scan any text file, one verse line per line
@@ -50,14 +53,14 @@ splc [options] play.spl
 | path | what |
 |---|---|
 | `tools/gen_lexicon.py` | builds `generated/Lexicon.inc` from `data/` |
-| `data/` | CMUdict, WordNet index files, VADER, Shakespeare character names, `overrides.tsv` |
-| `generated/Lexicon.inc` | the word table compiled into `splc` (~4 MB of source, well under 1 MB in the binary) |
+| `data/` | CMUdict, WordNet index files, VADER, `name_stress.tsv` (596 Shakespearean names with their metrical stress), `overrides.tsv` |
+| `generated/Lexicon.inc` | the word table compiled into `splc` (~5.5 MB of source, about 2 MB in the binary) |
 | `src/Lexer` | tokenises, keeping line structure for scansion; normalises `'d`, `è`, curly quotes, dashes |
 | `src/Parser` | recursive descent over SPL's sentence frames; nouns/adjectives/names come from the lexicon |
 | `src/Scansion` | dynamic-programming pentameter check with Elizabethan syllable rules |
-| `src/CodeGen` | LLVM IR via `IRBuilder`; acts and scenes are basic blocks; stage state is a runtime concern |
+| `src/CodeGen` | LLVM IR via `IRBuilder`; acts and scenes are basic blocks; character values are a module global so the standard `-O2` pipeline folds and threads them; stage state is a runtime concern |
 | `runtime/splrt.c` | characters, stacks, stage tracking, I/O, checked arithmetic |
-| `examples/` | `hello.spl` (prose), `hello_verse.spl` (strict pentameter), `primes.spl` (loops, I/O, stack) |
+| `examples/` | `hello.spl` (prose), `hello_verse.spl` (strict pentameter), `primes.spl` (loops, I/O, stack), `couplets.spl` (couplets and a prose-speaking servant) |
 
 ## Language notes
 
@@ -76,20 +79,33 @@ The grammar is SPL 1.2.1 with these liberties:
 
 ## Scansion rules
 
-Each word contributes its CMUdict stress pattern(s) (secondary stress counts as stress).
+Each word contributes its CMUdict stress pattern(s) (secondary stress counts as stress);
+Shakespearean names take theirs from `data/name_stress.tsv` (*Aumerle* 01, *Romeo* 100 or 10).
 Monosyllables and function words are metrically flexible. Elizabethan variants are
 allowed automatically: `-ed` as a full syllable, `-ion` as two, syncope in *heaven, power,
-spirit, every, glorious*, and the contractions `o'er`, `e'er`, `'gainst`, `'tis`. Write
-`blessèd` to force the extra syllable. A line scans if some choice of variants yields 10
-syllables (11 with a feminine ending) with at most `tolerance` stressed syllables out of
-place; the first foot may be inverted. A short line opening or closing a speech is
-treated as a shared line and not checked.
+spirit, every, glorious, general, dangerous, flattering*, the contractions `o'er`, `e'er`,
+`'gainst`, `'tis`, and cross-word elisions (*th'expense*, *t'assist*, *I'm*, *thou'rt*,
+*we're*, *'tis*, *i'th'*). Write `blessèd` to force the extra syllable. A line scans if
+some choice of variants yields 10 syllables (11 with a feminine ending) with at most
+`tolerance` stressed syllables out of place; the first foot may be inverted. A short line
+opening or closing a speech is treated as a shared line and not checked.
+
+**Prose.** Shakespeare's nobles speak verse and his servants, clowns and fools speak
+prose. `splc` reads each character's station from the dramatis personae: a description
+containing *servant, clown, fool, porter, nurse, gravedigger, peasant, shepherd, tapster,
+citizen, rogue…* (or the word *prose*) exempts that character from scansion; the word
+*verse* overrides. `--scan` marks such lines `prose`; `-fno-prose-exemption` scans everyone.
+
+**Couplets.** With `-fcouplets`, every scene must end in a rhyming couplet — the last two
+lines of dialogue, whoever speaks them. Rhymes are compared on CMU phones from the last
+stressed vowel; an identical word rhymes (the bard allows it), and a spelling rhyme is
+accepted for eye-rhymes and shifted vowels (*love/move*).
 
 Calibration against Shakespeare himself (Richard II, entirely verse, 2,606 lines of six
-or more words): 72% scan with tolerance 0, 85% with the default tolerance 1, 89% with 2.
-Most remaining failures are unknown-name stress (*Aumerle*), missing syncope rules
-(*liberal* as two syllables), and lines the editors joined. The default is therefore
-`warn`; `-fpentameter=error` is for the purist.
+or more words): 74% scan with tolerance 0, 89% with the default tolerance 1, 92% with 2.
+Remaining failures are mostly lines the editors joined, syncopes no rule covers, and the
+irregular lines Shakespeare simply wrote. The default is therefore `warn`;
+`-fpentameter=error` is for the purist.
 
 ## Regenerating the lexicon
 

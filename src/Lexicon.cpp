@@ -116,7 +116,8 @@ std::vector<std::string> Lexicon::stressOptions(const std::string &word, bool gr
     if (endsWith(w, "ed") && !endsWith(o, "0")) res.insert(o + "0");
     if (endsWith(w, "ion") || endsWith(w, "ious") || endsWith(w, "ience")) res.insert(o + "0");
     // syncope: heaven, even, power, flower, spirit, being, every, -ual, -ious -> one fewer
-    static const char *syn[] = {"aven", "even", "ower", "irit", "eing", "ery", "ary", "ual", "ious", "eous", "ier", "ior", "eor"};
+    static const char *syn[] = {"aven", "even", "ower", "irit", "eing", "ery", "ary", "ual", "ious", "eous", "ier", "ior", "eor",
+                                "eral", "erous", "ering", "ening", "oral", "ural", "ident", "ience", "ienc", "iance", "iant", "ient", "uous", "eath", "ison", "uel"};
     for (const char *s : syn)
       if (w.find(s) != std::string::npos && o.size() > 1) {
         // drop one unstressed syllable, preferring the last
@@ -126,6 +127,31 @@ std::vector<std::string> Lexicon::stressOptions(const std::string &word, bool gr
       }
   }
   return {res.begin(), res.end()};
+}
+
+static std::string spellingRhyme(const std::string &w) {
+  // from the last vowel group to the end, with a trailing silent 'e' folded in
+  size_t i = w.size();
+  while (i > 0 && !std::strchr("aeiouy", w[i - 1])) --i;
+  size_t j = i;
+  while (j > 0 && std::strchr("aeiouy", w[j - 1])) --j;
+  return j < w.size() ? w.substr(j) : w;
+}
+
+bool Lexicon::rhymes(const std::string &a, const std::string &b) {
+  std::string wa = normalize(a), wb = normalize(b);
+  if (wa == wb) return true;  // identical rhyme: the bard allows it
+  const LexEntry *ea = lookup(a), *eb = lookup(b);
+  if (ea && eb && *ea->rhyme && *eb->rhyme) {
+    std::vector<std::string> ra, rb;
+    splitOptions(ea->rhyme, ra);
+    splitOptions(eb->rhyme, rb);
+    for (const std::string &x : ra)
+      for (const std::string &y : rb)
+        if (x == y) return true;
+    // Elizabethan eye-rhymes and shifted vowels (love/move, eye/die): accept a spelling rhyme too
+  }
+  return spellingRhyme(wa) == spellingRhyme(wb);
 }
 
 }  // namespace spl

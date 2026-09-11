@@ -40,6 +40,7 @@ class Parser {
   void parseStageDirection(Scene &scene);
   void parseSpeech(Scene &scene, int speaker);
   int matchCharacter(size_t at, size_t *len) const;  // longest declared name at token `at`, -1 if none
+  static bool speaksProse(const std::string &description);
 
   // sentences (within [pos_, limit_))
   SentencePtr parseSentence();

@@ -1,5 +1,6 @@
 #include "Parser.h"
 
+#include <cctype>
 #include <cstring>
 #include <set>
 
@@ -74,6 +75,23 @@ int Parser::matchCharacter(size_t at, size_t *len) const {
 
 // -------------------------------------------------------------- structure ----
 
+// Shakespeare's convention: the well-born speak verse, servants and clowns speak prose.
+// We read the character's station from the dramatis personae description.
+bool Parser::speaksProse(const std::string &description) {
+  std::string d;
+  for (char c : description) d.push_back((char)std::tolower((unsigned char)c));
+  if (d.find("verse") != std::string::npos) return false;  // "who speaks in verse" overrides
+  if (d.find("prose") != std::string::npos) return true;
+  static const char *lowBorn[] = {"servant", "clown", "fool", "porter", "gravedigger", "grave-digger", "peasant", "nurse",
+                                  "drunkard", "thief", "bawd", "page", "groom", "jester", "shepherd", "cobbler", "carpenter",
+                                  "tinker", "tapster", "pedlar", "peddler", "rogue", "constable", "watchman", "citizen",
+                                  "wench", "pirate", "sailor", "fisherman", "murderer", "beggar", "rustic", "low-born",
+                                  "lowborn", "commoner", "low degree", "vagabond", "knave", "varlet", "gardener", "cook"};
+  for (const char *k : lowBorn)
+    if (d.find(k) != std::string::npos) return true;
+  return false;
+}
+
 Program Parser::parse() {
   limit_ = t_.size();
   parseTitle();
@@ -110,6 +128,7 @@ void Parser::parseDramatisPersonae() {
     c.description = textUntil('.', true);
     if (key.empty()) { diag_.error(c.loc, "empty character name"); continue; }
     if (names_.count(key)) { diag_.error(c.loc, "character '" + c.name + "' declared twice"); continue; }
+    c.prose = speaksProse(c.description);
     c.id = (int)prog_.characters.size();
     names_[key] = c.id;
     maxNameLen_ = std::max(maxNameLen_, key.size());

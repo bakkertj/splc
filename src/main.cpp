@@ -21,11 +21,15 @@ static void usage() {
                "usage: splc [options] play.spl\n"
                "  -o <file>                 output file (default: a.out, or play.o / play.ll)\n"
                "  -c                        compile to an object file, do not link\n"
+               "  -O0 | -O1 | -O2 | -O3     optimisation level (default -O2)\n"
                "  -emit-llvm                write LLVM IR (.ll) instead of an object\n"
                "  -fpentameter=off|warn|error   check that every line of dialogue scans (default: warn)\n"
                "  -fpentameter-tolerance=N  stressed syllables allowed out of place (default: 1)\n"
                "  -fno-feminine-endings     disallow an 11th unstressed syllable\n"
                "  -fno-initial-trochee      disallow an inverted first foot\n"
+               "  -fno-prose-exemption      scan low-born characters too (by default servants, clowns\n"
+               "                            and fools, as described in the dramatis personae, speak prose)\n"
+               "  -fcouplets                require every scene to end in a rhyming couplet\n"
                "  -fsyntax-only             parse and scan, produce nothing\n"
                "  --scan                    print the scansion of every line of dialogue and exit\n"
                "  --scan-text               scan a plain text file (every line is verse) and exit\n"
@@ -36,12 +40,14 @@ static void usage() {
 int main(int argc, char **argv) {
   std::string input, output, runtimeDir = SPLC_RUNTIME_DIR;
   bool compileOnly = false, emitLLVM = false, syntaxOnly = false, scanOnly = false, scanText = false;
+  int optLevel = 2;
   spl::ScansionOptions sopts;
   for (int i = 1; i < argc; ++i) {
     std::string a = argv[i];
     if (a == "-o" && i + 1 < argc) output = argv[++i];
     else if (a == "-c") compileOnly = true;
     else if (a == "-emit-llvm") emitLLVM = true;
+    else if (a.size() == 3 && a[0] == '-' && a[1] == 'O' && a[2] >= '0' && a[2] <= '3') optLevel = a[2] - '0';
     else if (a == "-fsyntax-only") syntaxOnly = true;
     else if (a == "--scan") scanOnly = true;
     else if (a == "--scan-text") scanText = true;
@@ -53,6 +59,8 @@ int main(int argc, char **argv) {
     else if (a.rfind("-fpentameter-tolerance=", 0) == 0) sopts.tolerance = std::atoi(a.c_str() + 23);
     else if (a == "-fno-feminine-endings") sopts.allowFeminine = false;
     else if (a == "-fno-initial-trochee") sopts.allowInitialTrochee = false;
+    else if (a == "-fno-prose-exemption") sopts.proseExemption = false;
+    else if (a == "-fcouplets") sopts.couplets = true;
     else if (a == "-h" || a == "--help") { usage(); return 0; }
     else if (a[0] == '-') { std::fprintf(stderr, "splc: unknown option %s\n", a.c_str()); usage(); return 2; }
     else if (input.empty()) input = a;
@@ -85,8 +93,15 @@ int main(int argc, char **argv) {
     } else {
       for (const spl::Act &a : prog.acts)
         for (const spl::Scene &s : a.scenes)
-          for (const spl::Item &it : s.items)
-            if (it.kind == spl::Item::Speech) lines.insert(lines.end(), it.lines.begin(), it.lines.end());
+          for (const spl::Item &it : s.items) {
+            if (it.kind != spl::Item::Speech) continue;
+            if (so.proseExemption && prog.characters[it.speaker].prose) {
+              for (const spl::DialogueLine &dl : it.lines)
+                std::printf("%5d  %-12s %-4s  %s\n", dl.line, "", "prose", src.lineText(dl.line).c_str());
+              continue;
+            }
+            lines.insert(lines.end(), it.lines.begin(), it.lines.end());
+          }
     }
     int ok = 0;
     for (const spl::DialogueLine &dl : lines) {
@@ -101,6 +116,7 @@ int main(int argc, char **argv) {
 
   spl::Scansion scansion(toks, diag, sopts);
   scansion.check(prog);
+  scansion.checkCouplets(prog);
   if (diag.errors()) {
     std::fprintf(stderr, "%d error(s) generated.\n", diag.errors());
     return 1;
@@ -109,6 +125,7 @@ int main(int argc, char **argv) {
 
   spl::CodeGen cg(prog, diag);
   if (!cg.generate()) return 1;
+  if (!cg.optimize(optLevel)) return 1;
 
   std::string base = input;
   if (base.size() > 4 && base.compare(base.size() - 4, 4, ".spl") == 0) base.resize(base.size() - 4);

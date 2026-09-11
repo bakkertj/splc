@@ -1,7 +1,9 @@
 #include "Scansion.h"
 
 #include <climits>
+#include <cstring>
 #include <functional>
+#include <set>
 
 #include "Lexicon.h"
 
@@ -20,6 +22,18 @@ ScansionResult Scansion::scanLine(const DialogueLine &line) const {
     std::vector<std::string> o = Lexicon::stressOptions(t.text, t.graveAccent);
     if (!Lexicon::lookup(t.text)) r.unknownWords = true;
     opts.push_back(o);
+  }
+  // Cross-word elisions the verse allows: th'expense, t'assist, I'm, thou'rt, we're, 'tis, i'th'.
+  static const std::set<std::string> elidable = {"the", "to", "thou", "thy", "my", "be", "he", "she", "we", "i", "you", "they", "so", "thee"};
+  static const std::set<std::string> pronouns = {"i", "thou", "he", "she", "it", "we", "you", "they", "that", "there", "who", "what", "here", "this"};
+  static const std::set<std::string> auxiliaries = {"am", "is", "are", "art", "will", "would", "shall", "had", "have", "has", "were", "was"};
+  static const std::set<std::string> prepositions = {"in", "of", "on", "by", "to", "at"};
+  for (size_t i = 0; i + 1 < opts.size(); ++i) {
+    const std::string &a = t_[line.tokens[i]].lower, &b = t_[line.tokens[i + 1]].lower;
+    bool bVowel = !b.empty() && (std::strchr("aeiou", b[0]) || (b[0] == 'h' && b.size() > 1 && std::strchr("aeiou", b[1])));
+    if (elidable.count(a) && bVowel) opts[i].push_back("");
+    if (pronouns.count(a) && auxiliaries.count(b)) opts[i + 1].push_back("");
+    if (prepositions.count(a) && b == "the") opts[i + 1].push_back("");
   }
   std::vector<int> targetsLen = {10};
   if (opts_.allowFeminine) targetsLen.push_back(11);
@@ -81,6 +95,7 @@ int Scansion::check(const Program &prog) {
     for (const Scene &s : a.scenes)
       for (const Item &it : s.items) {
         if (it.kind != Item::Speech) continue;
+        if (opts_.proseExemption && prog.characters[it.speaker].prose) continue;
         for (size_t li = 0; li < it.lines.size(); ++li) {
           const DialogueLine &dl = it.lines[li];
           if ((int)dl.tokens.size() < opts_.minWords) continue;
@@ -99,6 +114,28 @@ int Scansion::check(const Program &prog) {
           else diag_.warning(loc, msg);
         }
       }
+  return failed;
+}
+
+int Scansion::checkCouplets(const Program &prog) {
+  if (!opts_.couplets) return 0;
+  int failed = 0;
+  for (const Act &a : prog.acts)
+    for (const Scene &s : a.scenes) {
+      // the last two lines of dialogue in the scene, whoever speaks them
+      std::vector<const DialogueLine *> tail;
+      for (auto it = s.items.rbegin(); it != s.items.rend() && tail.size() < 2; ++it) {
+        if (it->kind != Item::Speech) continue;
+        for (auto li = it->lines.rbegin(); li != it->lines.rend() && tail.size() < 2; ++li) tail.push_back(&*li);
+      }
+      if (tail.size() < 2) continue;
+      const Token &w1 = t_[tail[1]->tokens.back()], &w2 = t_[tail[0]->tokens.back()];
+      if (Lexicon::rhymes(w1.text, w2.text)) continue;
+      ++failed;
+      std::string msg = "scene does not end in a rhyming couplet ('" + w1.text + "' / '" + w2.text + "')";
+      if (opts_.mode == ScansionOptions::Error) diag_.error(w2.loc, msg);
+      else diag_.warning(w2.loc, msg);
+    }
   return failed;
 }
 

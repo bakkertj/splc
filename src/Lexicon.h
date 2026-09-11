@@ -13,6 +13,7 @@ struct LexEntry {
   uint8_t flags;
   int8_t polarity;      // -1, 0, +1
   const char *stress;   // "10|1" : options separated by '|', 'x' = flexible
+  const char *rhyme;    // CMU phones from the last stressed vowel, per pronunciation, '|'-separated; "" if unknown
 };
 
 class Lexicon {
@@ -28,6 +29,10 @@ class Lexicon {
   static std::vector<std::string> stressOptions(const std::string &word, bool graveAccent);
 
   static std::string normalize(const std::string &word, bool *hadGrave = nullptr);
+
+  // Do two words rhyme?  Exact on CMU phones when both are known; otherwise a
+  // spelling rhyme on the final vowel group and what follows it.
+  static bool rhymes(const std::string &a, const std::string &b);
 };
 
 }  // namespace spl

@@ -24,11 +24,13 @@ class CodeGen {
   CodeGen(const Program &prog, Diagnostics &diag);
   ~CodeGen();
   bool generate();
+  bool optimize(int level);  // 0..3
   bool writeIR(const std::string &path);
   bool writeObject(const std::string &path);
 
- private:
   struct Impl;
+
+ private:
   std::unique_ptr<Impl> p_;
 };
 

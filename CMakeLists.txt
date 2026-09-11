@@ -33,7 +33,12 @@ target_compile_definitions(splc PRIVATE SPLC_RUNTIME_DIR="${CMAKE_BINARY_DIR}")
 # The lexicon table is large; keep its translation unit cheap to compile.
 set_source_files_properties(src/Lexicon.cpp PROPERTIES COMPILE_OPTIONS "-O1")
 llvm_map_components_to_libnames(llvm_libs core support native mc passes)
+list(REMOVE_DUPLICATES llvm_libs)
 target_link_libraries(splc PRIVATE ${llvm_libs})
+if(APPLE)
+  # The LLVM component archives overlap; Apple's ld ≥ 1015 warns about it unless told not to.
+  target_link_options(splc PRIVATE LINKER:-no_warn_duplicate_libraries)
+endif()
 add_dependencies(splc splrt)
 
 # --- tests --------------------------------------------------------------------
@@ -43,3 +48,6 @@ add_test(NAME primes COMMAND ${CMAKE_SOURCE_DIR}/test/run.sh $<TARGET_FILE:splc>
 add_test(NAME pentameter_error COMMAND ${CMAKE_SOURCE_DIR}/test/expect_fail.sh $<TARGET_FILE:splc> ${CMAKE_SOURCE_DIR}/examples/hello.spl -fpentameter=error)
 add_test(NAME pentameter_ok COMMAND $<TARGET_FILE:splc> -fsyntax-only -fpentameter=error ${CMAKE_SOURCE_DIR}/examples/hello_verse.spl)
 add_test(NAME hello_verse COMMAND ${CMAKE_SOURCE_DIR}/test/run.sh $<TARGET_FILE:splc> ${CMAKE_SOURCE_DIR}/examples/hello_verse.spl "Hello World!")
+add_test(NAME prose_exempt COMMAND $<TARGET_FILE:splc> -fsyntax-only -fpentameter=error ${CMAKE_SOURCE_DIR}/examples/couplets.spl)
+add_test(NAME couplet_missing COMMAND ${CMAKE_SOURCE_DIR}/test/expect_fail.sh $<TARGET_FILE:splc> ${CMAKE_SOURCE_DIR}/examples/couplets.spl -fpentameter=error -fcouplets)
+add_test(NAME no_prose_exemption COMMAND ${CMAKE_SOURCE_DIR}/test/expect_fail.sh $<TARGET_FILE:splc> ${CMAKE_SOURCE_DIR}/examples/couplets.spl -fpentameter=error -fno-prose-exemption)

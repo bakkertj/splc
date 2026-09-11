@@ -13,7 +13,6 @@
 typedef int64_t spl_int;
 
 typedef struct {
-  spl_int value;
   spl_int *stack;
   size_t sp, cap;
   int onStage;
@@ -21,6 +20,7 @@ typedef struct {
 
 static Character *chars;
 static const char **charNames;
+static spl_int *values;  /* lives in the compiled play's data segment so the optimizer can see it */
 static int nchars;
 
 static void die(const char *msg, const char *who) {
@@ -29,9 +29,10 @@ static void die(const char *msg, const char *who) {
   exit(1);
 }
 
-void spl_init(int n, const char **names) {
+void spl_init(int n, const char **names, spl_int *vals) {
   nchars = n;
   charNames = names;
+  values = vals;
   chars = calloc((size_t)n, sizeof(Character));
   if (!chars) die("out of memory", NULL);
 }
@@ -63,9 +64,6 @@ int spl_addressee(int speaker) {
   return found;
 }
 
-spl_int spl_get(int id) { return chars[id].value; }
-void spl_set(int id, spl_int v) { chars[id].value = v; }
-
 void spl_push(int id, spl_int v) {
   Character *c = &chars[id];
   if (c->sp == c->cap) {
@@ -79,7 +77,7 @@ void spl_push(int id, spl_int v) {
 void spl_pop(int id) {
   Character *c = &chars[id];
   if (c->sp == 0) die("tries to recall a memory they never had (stack underflow)", charNames[id]);
-  c->value = c->stack[--c->sp];
+  values[id] = c->stack[--c->sp];
 }
 
 void spl_out_char(spl_int v) { putchar((int)v); fflush(stdout); }
