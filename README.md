@@ -266,3 +266,10 @@ sh tools/build_corpus.sh shakespeare/shakespeare.mit.edu     # plays/ and poems/
 Edit `data/overrides.tsv` (word, flags, polarity, stress) to correct a word, or
 `data/name_stress.tsv` (name, stress) to add a name; both win over CMUdict. The lexicon
 generator prints a summary of what it built.
+
+## Licence
+
+`splc` is free software under the GNU General Public License, version 3 or later; see
+`LICENSE`. The dictionaries it is built from (CMUdict, WordNet, VADER) are bundled under
+their own permissive licences and the Shakespeare text is public domain; the details are
+in `THIRD_PARTY_LICENSES.md`.

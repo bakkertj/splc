@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Trevor Bakker
 // Lexicon.h - the generated English/Shakespeare word table and lookups.
 #pragma once
 #include <cstdint>

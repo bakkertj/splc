@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Trevor Bakker
 """Convert the shakespeare.mit.edu sonnet pages to plain text.
 
 usage: sonnets_to_text.py <dir with sonnet.*.html> <outdir>

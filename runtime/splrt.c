@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later
+ * Copyright (C) 2026 Trevor Bakker */
 /* splrt.c - runtime support for programs compiled by splc.
  *
  * Characters are identified by small integers assigned by the compiler.

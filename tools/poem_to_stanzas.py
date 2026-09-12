@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Trevor Bakker
 """Turn a shakespeare.mit.edu long-poem page (Venus and Adonis, The Rape of Lucrece,
 A Lover's Complaint) into plain-text stanzas separated by blank lines, ready for
 `splc --scan-text -frhyme-scheme=...`.

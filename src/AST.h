@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Trevor Bakker
 // AST.h - abstract syntax of a Shakespeare program.
 #pragma once
 #include <memory>

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Trevor Bakker
 """Propose data/elizabethan_stress.tsv lines from a verse corpus.
 
 usage: mine_stress.py [--splc build/splc] [--min N] corpus.txt [corpus2.txt ...]

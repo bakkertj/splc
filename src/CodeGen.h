@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Trevor Bakker
 // CodeGen.h - lowers a Program to LLVM IR.
 #pragma once
 #include <map>

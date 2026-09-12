@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Trevor Bakker
 """Extract the verse lines of a Shakespeare play as plain text, one line per line,
 for `splc --scan-text`, `--suggest-stress` and tools/mine_stress.py.
 

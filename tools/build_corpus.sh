@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Trevor Bakker
 # Build shakespeare/plays/<play>_verse.txt and <play>_prose.txt from a
 # shakespeare.mit.edu download, and shakespeare/poems/*.txt from its Poetry pages.
 # usage: tools/build_corpus.sh shakespeare/shakespeare.mit.edu

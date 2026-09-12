@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Trevor Bakker
 // main.cpp - splc driver: splc [options] play.spl
 #include <cstdio>
 #include <cstdlib>

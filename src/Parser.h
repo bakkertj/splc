@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Trevor Bakker
 // Parser.h - recursive-descent parser for the Shakespeare Programming Language.
 #pragma once
 #include <map>

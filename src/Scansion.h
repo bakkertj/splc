@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Trevor Bakker
 // Scansion.h - iambic pentameter checking of dialogue lines.
 #pragma once
 #include <string>

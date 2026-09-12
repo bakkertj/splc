@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Trevor Bakker
 # run.sh SPLC PLAY EXPECTED_OUTPUT [STDIN]
 set -e
 splc="$1"; play="$2"; expected="$3"; input="${4:-}"
