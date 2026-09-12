@@ -3,6 +3,7 @@
 #include "CodeGen.h"
 
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Instructions.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
@@ -180,7 +181,7 @@ struct CodeGen::Impl {
         b.CreateCondBr(c, thenBB, contBB);
         b.SetInsertPoint(thenBB);
         genSentence(*s.body, curAct);
-        if (!b.GetInsertBlock()->getTerminator()) b.CreateBr(contBB);
+        if (!hasTerminator(*b.GetInsertBlock())) llvm::BranchInst::Create(contBB, b.GetInsertBlock());
         b.SetInsertPoint(contBB);
         break;
       }
@@ -192,6 +193,13 @@ struct CodeGen::Impl {
         break;
       }
     }
+  }
+
+  // BasicBlock::getTerminator() is not a reliable test on an empty block across LLVM
+  // versions (on LLVM 23 it did not return null for the empty after_goto blocks), so
+  // look at the last instruction directly.
+  static bool hasTerminator(const llvm::BasicBlock &bb) {
+    return !bb.empty() && bb.back().isTerminator();
   }
 
   bool generate() {
@@ -266,10 +274,7 @@ struct CodeGen::Impl {
     // was emitted into it and no scene end branched out of it, close it explicitly so
     // that every block has a terminator whatever the LLVM version's IRBuilder did.
     for (llvm::BasicBlock &bb : *mainFn)
-      if (!bb.getTerminator()) {
-        b.SetInsertPoint(&bb);
-        b.CreateUnreachable();
-      }
+      if (!hasTerminator(bb)) new llvm::UnreachableInst(ctx, &bb);
     std::string err;
     llvm::raw_string_ostream os(err);
     if (llvm::verifyModule(*mod, &os)) {
