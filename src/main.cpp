@@ -113,16 +113,20 @@ int main(int argc, char **argv) {
       }
     } else {
       for (const spl::Act &a : prog.acts)
-        for (const spl::Scene &s : a.scenes)
+        for (const spl::Scene &s : a.scenes) {
+          bool inProse = false;
           for (const spl::Item &it : s.items) {
+            if (it.kind == spl::Item::Prose) inProse = true;
+            else if (it.kind == spl::Item::Verse) inProse = false;
             if (it.kind != spl::Item::Speech) continue;
-            if (so.proseExemption && prog.characters[it.speaker].prose) {
+            if (inProse || (so.proseExemption && prog.characters[it.speaker].prose)) {
               for (const spl::DialogueLine &dl : it.lines)
                 std::printf("%5d  %-12s %-4s  %s\n", dl.line, "", "prose", src.lineText(dl.line).c_str());
               continue;
             }
             lines.insert(lines.end(), it.lines.begin(), it.lines.end());
           }
+        }
     }
     if (scanText && !so.rhymeScheme.empty()) {
       // blank lines separate stanzas

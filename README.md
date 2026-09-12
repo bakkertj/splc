@@ -108,6 +108,15 @@ The grammar is SPL 1.2.1 with these liberties:
 * `[Prose]` and `[Verse]` are accepted as stage directions: every speech after `[Prose]` is
   exempt from scansion and rhyme checks until `[Verse]`, whoever speaks. They generate no code.
 
+`examples/balcony.spl` is the language at its most literal: Juliet, addressing Romeo,
+recites "O Romeo, Romeo! wherefore art thou Romeo?" and the rest of her balcony speech by
+assigning him each letter in turn and telling him to speak his mind, 1,251 lines of prose
+for 627 bytes of verse. `tools/text_to_spl.py` will do the same for any text:
+
+```
+python3 tools/text_to_spl.py --title "A Greeting." --speaker Juliet --listener Romeo hello.txt > hello.spl
+```
+
 ## Layout
 
 | path | what |
@@ -125,12 +134,13 @@ The grammar is SPL 1.2.1 with these liberties:
 | `tools/play_to_lines.py` | extracts a play's lines (shakespeare.mit.edu HTML or plain text), classifying each speech as verse or prose |
 | `tools/poem_to_stanzas.py` | turns a long-poem page into blank-line-separated stanzas |
 | `tools/build_corpus.sh` | runs both over a shakespeare.mit.edu download to fill `shakespeare/plays/` and `shakespeare/poems/` |
+| `tools/text_to_spl.py` | writes a play that prints a given text, one byte per assignment; how `examples/balcony.spl` was made |
 | `docs/writing-a-sonnet.md` | how `examples/sonnet.spl` was written, and how to write your own |
 | `data/` | CMUdict, WordNet index files, VADER, `shakespeare_names.txt`, `name_stress.tsv` (596 Shakespearean names with their metrical stress), `elizabethan_stress.tsv` (words Shakespeare stressed differently), `overrides.tsv` |
 | `generated/Lexicon.inc` | the word table compiled into `splc` (about 5.5 MB of source, about 2 MB in the binary) |
 | `shakespeare/` | the 154 sonnets, Richard II, `plays/` with the verse and prose lines of all 37 plays (60,292 verse, 16,744 prose), and `poems/` with Venus and Adonis, Lucrece and A Lover's Complaint as stanzas; all used for calibration |
-| `examples/` | `hello.spl` (prose), `hello_verse.spl` (strict pentameter), `primes.spl` (loops, I/O, stack), `fizzbuzz.spl`, `reverse.spl` (a string reversed through the stack), `couplets.spl` (couplets and a prose-speaking servant), `sonnet.spl` (two speakers, a sonnet each) |
-| `test/` | the shell helpers `ctest` uses (thirteen tests are declared in `CMakeLists.txt`) and `calibration.sh`, which CI runs to make sure the checker still tells verse from prose |
+| `examples/` | `hello.spl` (prose), `hello_verse.spl` (strict pentameter), `primes.spl` (loops, I/O, stack), `fizzbuzz.spl`, `reverse.spl` (a string reversed through the stack), `couplets.spl` (couplets and a prose-speaking servant), `sonnet.spl` (two speakers, a sonnet each), `balcony.spl` (Juliet recites her balcony speech, generated from `balcony.txt`) |
+| `test/` | the shell helpers `ctest` uses (fifteen tests are declared in `CMakeLists.txt`) and `calibration.sh`, which CI runs to make sure the checker still tells verse from prose |
 | `editors/vscode/` | a VS Code extension with syntax highlighting for `.spl` (see its README to install) |
 | `.github/workflows/ci.yml` | GitHub Actions: build and test on Ubuntu (apt LLVM 18) and macOS (Homebrew LLVM), plus the calibration check |
 
