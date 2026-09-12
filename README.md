@@ -157,6 +157,7 @@ allowance for monosyllables.
 | `tools/build_corpus.sh` | runs both over a shakespeare.mit.edu download to fill `shakespeare/plays/` and `shakespeare/poems/` |
 | `tools/text_to_spl.py` | writes a play that prints a given text, in prose or (`--verse`) in rhymed iambic pentameter; how the balcony examples were made |
 | `docs/writing-a-sonnet.md` | how `examples/sonnet.spl` was written, and how to write your own |
+| `docs/releasing.md`, `docs/release-notes-*.md` | how a release is cut, and what each one changed |
 | `data/` | CMUdict, WordNet index files, VADER, `shakespeare_names.txt`, `name_stress.tsv` (596 Shakespearean names with their metrical stress), `elizabethan_stress.tsv` (words Shakespeare stressed differently), `overrides.tsv` |
 | `generated/Lexicon.inc` | the word table compiled into `splc` (about 5.5 MB of source, about 2 MB in the binary) |
 | `shakespeare/` | the 154 sonnets, Richard II, `plays/` with the verse and prose lines of all 37 plays (60,292 verse, 16,744 prose), and `poems/` with Venus and Adonis, Lucrece and A Lover's Complaint as stanzas; all used for calibration |
