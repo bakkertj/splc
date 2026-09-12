@@ -34,7 +34,7 @@ On macOS with Homebrew LLVM: `-DLLVM_DIR=$(brew --prefix llvm)/lib/cmake/llvm`, 
 `./build_mac.sh`, which configures against Homebrew's LLVM, builds into `build-mac/`, runs
 the tests and the examples, and logs everything to `build_mac.log`.
 
-Verified on Linux x86_64 with LLVM 18.1.3 and on macOS 26 (arm64) with Homebrew LLVM 20.1.8;
+Verified on Linux x86_64 with LLVM 18.1.3 and 20.1.2, and on macOS 26 (arm64) with Homebrew LLVM 20.1.8;
 CI builds against Homebrew's current LLVM (23 at the time of writing), so the LLVM 21 API changes
 are covered.
 The build produces `splc` and the runtime library `libsplrt.a`; `splc` links finished plays

@@ -262,6 +262,14 @@ struct CodeGen::Impl {
         else b.CreateRet(llvm::ConstantInt::get(i32(), 0));
       }
     }
+    // A block opened after an unconditional goto is dead code by construction; if nothing
+    // was emitted into it and no scene end branched out of it, close it explicitly so
+    // that every block has a terminator whatever the LLVM version's IRBuilder did.
+    for (llvm::BasicBlock &bb : *mainFn)
+      if (!bb.getTerminator()) {
+        b.SetInsertPoint(&bb);
+        b.CreateUnreachable();
+      }
     std::string err;
     llvm::raw_string_ostream os(err);
     if (llvm::verifyModule(*mod, &os)) {
