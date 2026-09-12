@@ -16,18 +16,23 @@ examples/hello.spl:13:2: warning: line does not scan as iambic pentameter (more 
 ...
 ```
 
+Source: https://github.com/bakkertj/spl
+
 ## Building
 
 Requires CMake 3.20 or newer, a C++17 compiler, LLVM 18 or newer development files, and
 Python 3 (only to regenerate the lexicon or the sonnet corpus).
 
 ```
+git clone https://github.com/bakkertj/spl.git && cd spl
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release   # add -DLLVM_DIR=/path/to/lib/cmake/llvm if needed
 cmake --build build
 ctest --test-dir build
 ```
 
-On macOS with Homebrew LLVM: `-DLLVM_DIR=$(brew --prefix llvm)/lib/cmake/llvm`.
+On macOS with Homebrew LLVM: `-DLLVM_DIR=$(brew --prefix llvm)/lib/cmake/llvm`, or run
+`./build_mac.sh`, which configures against Homebrew's LLVM, builds into `build-mac/`, runs
+the tests and the examples, and logs everything to `build_mac.log`.
 
 Verified on Linux x86_64 with LLVM 18.1.3 and on macOS 26 (arm64) with Homebrew LLVM 20.1.8.
 The build produces `splc` and the runtime library `libsplrt.a`; `splc` links finished plays
