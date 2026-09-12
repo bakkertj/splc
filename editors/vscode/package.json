@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "publisher": "bakkertj",
   "license": "GPL-3.0-or-later",
-  "repository": { "type": "git", "url": "https://github.com/bakkertj/spl" },
+  "repository": { "type": "git", "url": "https://github.com/bakkertj/splc" },
   "engines": { "vscode": "^1.60.0" },
   "categories": ["Programming Languages"],
   "contributes": {

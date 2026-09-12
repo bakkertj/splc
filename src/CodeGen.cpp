@@ -17,6 +17,8 @@
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/TargetParser/Host.h"
+#include "llvm/TargetParser/Triple.h"
+#include "llvm/Config/llvm-config.h"
 
 
 namespace spl {
@@ -278,14 +280,22 @@ static bool initTarget(CodeGen::Impl &p) {
   if (p.tm) return true;
   llvm::InitializeNativeTarget();
   llvm::InitializeNativeTargetAsmPrinter();
-  std::string triple = llvm::sys::getDefaultTargetTriple();
+  llvm::Triple triple(llvm::sys::getDefaultTargetTriple());
   std::string err;
+  llvm::TargetOptions opt;
+#if LLVM_VERSION_MAJOR >= 21
+  // LLVM 21 changed these to take a Triple rather than its string form.
   const llvm::Target *target = llvm::TargetRegistry::lookupTarget(triple, err);
   if (!target) { p.diag.error({0, 0}, err); return false; }
-  llvm::TargetOptions opt;
   p.tm.reset(target->createTargetMachine(triple, "generic", "", opt, llvm::Reloc::PIC_));
-  p.mod->setDataLayout(p.tm->createDataLayout());
   p.mod->setTargetTriple(triple);
+#else
+  const llvm::Target *target = llvm::TargetRegistry::lookupTarget(triple.str(), err);
+  if (!target) { p.diag.error({0, 0}, err); return false; }
+  p.tm.reset(target->createTargetMachine(triple.str(), "generic", "", opt, llvm::Reloc::PIC_));
+  p.mod->setTargetTriple(triple.str());
+#endif
+  p.mod->setDataLayout(p.tm->createDataLayout());
   return true;
 }
 
