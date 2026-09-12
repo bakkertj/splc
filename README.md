@@ -111,7 +111,7 @@ The grammar is SPL 1.2.1 with these liberties:
 `examples/balcony.spl` is the language at its most literal: Juliet, addressing Romeo,
 recites "O Romeo, Romeo! wherefore art thou Romeo?" and the rest of her balcony speech by
 assigning him each letter in turn and telling him to speak his mind, 1,251 lines of prose
-for 627 bytes of verse. `examples/balcony_verse.spl` prints the same 627 bytes in 1,789
+for 627 bytes of verse. `examples/balcony_verse.spl` prints the same 627 bytes in 2,166
 lines of iambic pentameter rhyming in couplets, and passes
 `-fpentameter=error -frhyme-scheme=AABB`. `tools/text_to_spl.py` made both and will do
 the same for any text:
@@ -121,14 +121,22 @@ python3 tools/text_to_spl.py --title "A Greeting." --speaker Juliet --listener R
 python3 tools/text_to_spl.py --verse --title "A Greeting." hello.txt > hello_verse.spl
 ```
 
-The verse mode works because the generator only ever uses monosyllables (the listener is
-`thee`, subtraction adds an insulting noun, questions such as `Art thou worse than a fox?`
-are harmless padding), and every monosyllable is metrically flexible, so any ten words
-scan. Rhyme is a dynamic programme over the spelling of each constant (direct or as a
-delta, terms in any order, with or without padding) that lands each couplet's two line
-ends on words that can rhyme: a noun slot takes any rhyme, and a fixed word such as
-*thee*, *of* or *and* rhymes with a slot filled from its own class (*tree*, *love*,
-*hand*), with the classes drawn from the compiler's lexicon.
+The verse mode plans the speech syllable by syllable. Every word it may use carries its
+stress from the lexicon: function words (*the*, *of*, *and*, *thy*) are unstressed,
+nouns and *Speak*, *mind*, *sum*, *twice* are stressed, adjectives and two-syllable nouns
+are trochees (*lovely*, *garden*), and *thou*, *thee* and *art* may go either way. A
+dynamic programme keeps the stress strictly alternating from the first syllable of the
+speech to the last and never splits a word across a line, so a power of two is spelled
+`a lovely golden cat` rather than `a big big cat`, and larger values use `twice`, `the
+square of`, `the cube of` and `the sum of` in whichever combination fits the metre at
+that point in the line. Between sentences it may insert harmless padding (`Thou art thee.`,
+`Art thou as good as a rosy plum?`) to mend the parity or to move a line end onto a word
+that can rhyme. Rhyme is a second objective of the same programme: it lands each
+couplet's two line ends on nouns of one rhyme class, or on a fixed word such as *thee*,
+*twice* or *mind* and a noun of its class (*bee*, *dice*, *hind*), with the classes drawn
+from the compiler's lexicon. Because the planner uses the dictionary stress of every
+word, the result is pentameter in the ordinary sense and not merely by the checker's
+allowance for monosyllables.
 
 ## Layout
 
@@ -312,7 +320,7 @@ Edit `data/overrides.tsv` (word, flags, polarity, stress) to correct a word, or
 `data/name_stress.tsv` (name, stress) to add a name; both win over CMUdict. The lexicon
 generator prints a summary of what it built.
 
-## License
+## Licence
 
 `splc` is free software under the GNU General Public License, version 3 or later; see
 `LICENSE`. The dictionaries it is built from (CMUdict, WordNet, VADER) are bundled under
