@@ -273,7 +273,12 @@ struct CodeGen::Impl {
     std::string err;
     llvm::raw_string_ostream os(err);
     if (llvm::verifyModule(*mod, &os)) {
-      diag.error({0, 0}, "internal: LLVM module verification failed:\n" + os.str());
+      // Dump the module so the failure can be diagnosed from a log alone.
+      std::string ir;
+      llvm::raw_string_ostream irs(ir);
+      mod->print(irs, nullptr);
+      diag.error({0, 0}, "internal: LLVM module verification failed (LLVM " LLVM_VERSION_STRING "):\n" + os.str() +
+                             "\n--- module ---\n" + irs.str());
       return false;
     }
     return diag.errors() == 0;
