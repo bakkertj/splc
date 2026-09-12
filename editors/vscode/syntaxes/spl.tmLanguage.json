@@ -1,0 +1,96 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Shakespeare Programming Language",
+  "scopeName": "source.spl",
+  "patterns": [
+    { "include": "#stage-direction" },
+    { "include": "#act-scene" },
+    { "include": "#speaker" },
+    { "include": "#goto" },
+    { "include": "#conditional" },
+    { "include": "#io" },
+    { "include": "#stack" },
+    { "include": "#question" },
+    { "include": "#arithmetic" },
+    { "include": "#comparison" },
+    { "include": "#pronoun" },
+    { "include": "#zero" },
+    { "include": "#punctuation" }
+  ],
+  "repository": {
+    "stage-direction": {
+      "name": "meta.stage-direction.spl",
+      "begin": "\\[",
+      "end": "\\]",
+      "beginCaptures": { "0": { "name": "punctuation.definition.stage.spl" } },
+      "endCaptures": { "0": { "name": "punctuation.definition.stage.spl" } },
+      "patterns": [
+        { "match": "\\b(Enter|Exit|Exeunt|Prose|Verse)\\b", "name": "keyword.control.stage.spl" },
+        { "match": "\\band\\b", "name": "keyword.operator.and.spl" },
+        { "match": "[A-Z][A-Za-z']*", "name": "entity.name.function.character.spl" }
+      ]
+    },
+    "act-scene": {
+      "match": "^\\s*(Act|Scene)\\s+([IVXLCDM]+)\\s*(:)(.*?)(\\.)",
+      "captures": {
+        "1": { "name": "keyword.control.section.spl" },
+        "2": { "name": "constant.numeric.roman.spl" },
+        "3": { "name": "punctuation.separator.spl" },
+        "4": { "name": "comment.line.description.spl" },
+        "5": { "name": "punctuation.terminator.spl" }
+      }
+    },
+    "speaker": {
+      "match": "^\\s*([A-Z][A-Za-z']*(?:\\s+[A-Z][A-Za-z']*)*)\\s*(:)\\s*$",
+      "captures": {
+        "1": { "name": "entity.name.function.speaker.spl" },
+        "2": { "name": "punctuation.separator.speaker.spl" }
+      }
+    },
+    "goto": {
+      "match": "\\b(?:(Let us|We shall|We must)\\s+(return|proceed)\\s+to\\s+(act|scene)\\s+([IVXLCDM]+))",
+      "captures": {
+        "1": { "name": "keyword.control.flow.spl" },
+        "2": { "name": "keyword.control.flow.spl" },
+        "3": { "name": "keyword.control.section.spl" },
+        "4": { "name": "constant.numeric.roman.spl" }
+      }
+    },
+    "conditional": {
+      "match": "\\b(If)\\s+(so|not)\\b",
+      "captures": { "1": { "name": "keyword.control.conditional.spl" }, "2": { "name": "keyword.control.conditional.spl" } }
+    },
+    "io": {
+      "match": "\\b(Speak (?:your|thy) mind|Open (?:your|thy) (?:heart|mind)|Listen to (?:your|thy) heart)\\b",
+      "name": "support.function.io.spl"
+    },
+    "stack": {
+      "match": "\\b(Remember|Recall)\\b",
+      "name": "support.function.stack.spl"
+    },
+    "question": {
+      "match": "\\b(Am I|Art thou|Is|Are you)\\b",
+      "name": "keyword.control.question.spl"
+    },
+    "arithmetic": {
+      "match": "\\b(the sum of|the difference between|the product of|the quotient between|the remainder of the quotient between|the square of|the cube of|the square root of|the factorial of|twice)\\b",
+      "name": "keyword.operator.arithmetic.spl"
+    },
+    "comparison": {
+      "match": "\\b(as \\w+ as|better than|worse than|more \\w+ than|less \\w+ than|\\w+er than)\\b",
+      "name": "keyword.operator.comparison.spl"
+    },
+    "pronoun": {
+      "match": "\\b(I|me|myself|you|thou|thee|thyself|yourself)\\b",
+      "name": "variable.language.pronoun.spl"
+    },
+    "zero": {
+      "match": "\\b(nothing|zero)\\b",
+      "name": "constant.numeric.zero.spl"
+    },
+    "punctuation": {
+      "match": "[.!?]",
+      "name": "punctuation.terminator.sentence.spl"
+    }
+  }
+}

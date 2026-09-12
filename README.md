@@ -61,6 +61,7 @@ splc [options] play.spl
   --suggest-stress              for each failing line of a text file, print the one-word stress
                                 changes that would make it scan (corpus mining)
   --lexicon-size                print the number of words in the lexicon and exit
+  --version
   --runtime <dir>               where to find libsplrt.a (default: the build directory)
 ```
 
@@ -127,7 +128,9 @@ The grammar is SPL 1.2.1 with these liberties:
 | `generated/Lexicon.inc` | the word table compiled into `splc` (about 5.5 MB of source, about 2 MB in the binary) |
 | `shakespeare/` | the 154 sonnets, Richard II, `plays/` with the verse and prose lines of all 37 plays (60,292 verse, 16,744 prose), and `poems/` with Venus and Adonis, Lucrece and A Lover's Complaint as stanzas; all used for calibration |
 | `examples/` | `hello.spl` (prose), `hello_verse.spl` (strict pentameter), `primes.spl` (loops, I/O, stack), `fizzbuzz.spl`, `reverse.spl` (a string reversed through the stack), `couplets.spl` (couplets and a prose-speaking servant), `sonnet.spl` (two speakers, a sonnet each) |
-| `test/` | the two shell helpers `ctest` uses; the thirteen tests are declared in `CMakeLists.txt` |
+| `test/` | the shell helpers `ctest` uses (thirteen tests are declared in `CMakeLists.txt`) and `calibration.sh`, which CI runs to make sure the checker still tells verse from prose |
+| `editors/vscode/` | a VS Code extension with syntax highlighting for `.spl` (see its README to install) |
+| `.github/workflows/ci.yml` | GitHub Actions: build and test on Ubuntu (apt LLVM 18) and macOS (Homebrew LLVM), plus the calibration check |
 
 ## How a play is compiled
 
@@ -225,11 +228,28 @@ Shakespeare's own misses are syncopes no rule covers, lines the editors joined, 
 irregular lines he simply wrote. The default mode is therefore `warn`; `-fpentameter=error`
 is for the purist.
 
-Ranked by play (`shakespeare/plays/CALIBRATION.txt` has all 37), the verse pass rate
-follows the chronology any editor would give: the early histories, Romeo and Juliet, King
-John and Julius Caesar score 91 to 93%, and the late plays, whose verse is looser, trail
-(Tempest 79%, Coriolanus 78%, Timon 77%, Pericles 71%). Prose sits between 29% and 42%
-for every play with more than a hundred prose lines.
+Ranked by play (`shakespeare/plays/CALIBRATION.txt` has all 37, with tolerance 0 and 1),
+the verse pass rate follows the chronology any editor would give: the early histories,
+Romeo and Juliet, King John and Julius Caesar score 91 to 93%, and the late plays, whose
+verse is looser, trail (Tempest 79%, Coriolanus 78%, Timon 77%, Pericles 71%). Raising the
+tolerance to 1 lifts every play by four or five points and leaves the order alone, so the
+late looseness is not a matter of a stray stress; it is structural. Prose sits between 29%
+and 42% for every play with more than a hundred prose lines.
+
+The same table gives the share of scanning lines that carry a feminine ending, which is the
+oldest metrical test of Shakespeare's chronology (Spedding, 1850), and the checker
+reproduces it without being told the dates:
+
+| play | feminine endings |
+|---|---|
+| King John, 1 Henry IV, Love's Labour's Lost | 7 to 9% |
+| Romeo and Juliet, Titus, Richard II, Midsummer | 10 to 11% |
+| Hamlet, Twelfth Night, Troilus | 22 to 23% |
+| Lear, Cymbeline, Tempest, Winter's Tale | 29 to 32% |
+| Henry VIII | 44% |
+
+Henry VIII stands alone because half of it is Fletcher's, whose verse runs to feminine
+endings far more than Shakespeare's; that figure is the evidence Spedding used to say so.
 
 Rhyme, with `--scan-text -frhyme-scheme=...` over blank-line-separated stanzas:
 

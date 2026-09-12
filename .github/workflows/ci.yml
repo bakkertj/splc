@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+jobs:
+  linux:
+    name: Ubuntu, apt LLVM 18
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install LLVM and build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends llvm-18-dev libzstd-dev zlib1g-dev cmake ninja-build clang
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DLLVM_DIR=/usr/lib/llvm-18/lib/cmake/llvm
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+      - name: Calibration
+        run: sh test/calibration.sh build/splc
+
+  macos:
+    name: macOS, Homebrew LLVM
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install LLVM and build tools
+        run: brew install llvm ninja
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DLLVM_DIR="$(brew --prefix llvm)/lib/cmake/llvm"
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+      - name: Calibration
+        run: sh test/calibration.sh build/splc

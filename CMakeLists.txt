@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Trevor Bakker
 cmake_minimum_required(VERSION 3.20)
-project(splc CXX C)
+project(splc VERSION 0.1.0 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -31,7 +31,7 @@ add_executable(splc
   src/main.cpp src/Diagnostics.cpp src/Lexicon.cpp src/Lexer.cpp
   src/Parser.cpp src/Scansion.cpp src/CodeGen.cpp)
 target_include_directories(splc PRIVATE src generated)
-target_compile_definitions(splc PRIVATE SPLC_RUNTIME_DIR="${CMAKE_BINARY_DIR}")
+target_compile_definitions(splc PRIVATE SPLC_RUNTIME_DIR="${CMAKE_BINARY_DIR}" SPLC_VERSION="${PROJECT_VERSION}")
 # The lexicon table is large; keep its translation unit cheap to compile.
 set_source_files_properties(src/Lexicon.cpp PROPERTIES COMPILE_OPTIONS "-O1")
 llvm_map_components_to_libnames(llvm_libs core support native mc passes)

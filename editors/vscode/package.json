@@ -1,0 +1,24 @@
+{
+  "name": "shakespeare-programming-language",
+  "displayName": "Shakespeare Programming Language",
+  "description": "Syntax highlighting for .spl plays compiled by splc",
+  "version": "0.1.0",
+  "publisher": "bakkertj",
+  "license": "GPL-3.0-or-later",
+  "repository": { "type": "git", "url": "https://github.com/bakkertj/spl" },
+  "engines": { "vscode": "^1.60.0" },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [{
+      "id": "spl",
+      "aliases": ["Shakespeare Programming Language", "SPL"],
+      "extensions": [".spl"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "spl",
+      "scopeName": "source.spl",
+      "path": "./syntaxes/spl.tmLanguage.json"
+    }]
+  }
+}

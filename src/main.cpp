@@ -7,6 +7,8 @@
 #include <string>
 #include <unistd.h>
 
+#include "llvm/Config/llvm-config.h"
+
 #include "CodeGen.h"
 #include "Diagnostics.h"
 #include "Lexer.h"
@@ -16,6 +18,9 @@
 
 #ifndef SPLC_RUNTIME_DIR
 #define SPLC_RUNTIME_DIR "."
+#endif
+#ifndef SPLC_VERSION
+#define SPLC_VERSION "dev"
 #endif
 
 static void usage() {
@@ -44,6 +49,7 @@ static void usage() {
                "  --suggest-stress          for each failing line of a text file, print the single-word\n"
                "                            stress changes that would make it scan (corpus mining)\n"
                "  --lexicon-size            print the number of words in the lexicon and exit\n"
+               "  --version\n"
                "  --runtime <dir>           where to find libsplrt.a (default: " SPLC_RUNTIME_DIR ")\n");
 }
 
@@ -76,6 +82,7 @@ int main(int argc, char **argv) {
     else if (a == "-fnear-rhymes") sopts.nearRhymes = true;
     else if (a == "-fsonnet") sopts.sonnets = true;
     else if (a == "-h" || a == "--help") { usage(); return 0; }
+    else if (a == "--version") { std::printf("splc %s (LLVM %s)\n", SPLC_VERSION, LLVM_VERSION_STRING); return 0; }
     else if (a[0] == '-') { std::fprintf(stderr, "splc: unknown option %s\n", a.c_str()); usage(); return 2; }
     else if (input.empty()) input = a;
     else { std::fprintf(stderr, "splc: only one play at a time, please\n"); return 2; }

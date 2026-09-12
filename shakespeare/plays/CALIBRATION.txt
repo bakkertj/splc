@@ -1,43 +1,42 @@
-# splc --scan-text at tolerance 0: share of lines that scan, by play and by kind.
-# verse = speeches whose lines all begin with a capital; prose = speeches wrapped by the
-# edition (continuation lines begin in lower case). Regenerate: tools/build_corpus.sh, then
-# the loop in README. Prose lines are wrapped near ten syllables, which is why they still
-# scan a third of the time: that is the checker's floor, not a sign of hidden verse.
-play                verse  lines    prose  lines
-3henryvi            92.9%   2437    58.8%     17
-romeo_juliet        92.7%   2147    40.1%    242
-john                92.5%   2245     0.0%      0
-julius_caesar       91.6%   1809    30.1%    113
-titus               91.3%   2039    36.8%     19
-richardii           91.1%   2444    66.7%      6
-comedy_errors       90.9%   1248    42.4%    144
-1henryvi            90.7%   2343    57.1%      7
-richardiii          90.5%   2797    42.4%     33
-2henryvi            90.0%   2155    32.8%    348
-two_gentlemen       89.6%   1277    38.4%    271
-henryv              89.5%   1643    32.9%    916
-1henryiv            89.3%   1345    35.0%    933
-merchant            89.2%   1734    29.8%    433
-2henryiv            88.5%   1370    33.1%   1087
-troilus_cressida    86.4%   1718    31.8%    566
-allswell            85.9%   1168    30.4%    875
-taming_shrew        85.8%   1588    32.8%    302
-hamlet              85.7%   2128    33.1%    670
-much_ado            85.2%    596    34.6%   1211
-lll                 85.1%   1258    32.3%    535
-twelfth_night       84.8%    750    32.2%    937
-asyoulikeit         84.1%    942    32.9%    969
-midsummer           83.7%   1341    41.5%    277
-henryviii           82.5%   2251    41.0%     83
-othello             82.4%   1861    30.9%    418
-winters_tale        82.2%   1611    36.0%    627
-cleopatra           81.1%   1925    30.6%    157
-lear                80.4%   1733    34.8%    543
-cymbeline           80.2%   1822    34.3%    347
-measure             79.9%   1326    28.9%    684
-macbeth             79.9%   1383    36.6%    112
-tempest             78.7%   1252    33.9%    257
-coriolanus          78.2%   1830    31.6%    494
-timon               76.7%   1105    34.0%    371
-merry_wives         75.2%    314    34.8%   1490
-pericles            70.9%   1357    40.0%    250
+# Metrical profile of each play's verse speeches, splc --scan-text.
+# tol0/tol1 = share of lines scanning at tolerance 0 / 1; fem = share of scanning lines with an
+# eleventh, unstressed syllable (feminine ending), the classic chronology marker; prose =
+# share of the edition's prose speeches' lines that scan (control). Sorted by tol0.
+play                 tol0   tol1    fem verse-lines   prose
+3henryvi            92.9%  96.6%  14.3%   2437   58.8%
+romeo_juliet        92.7%  96.0%  10.6%   2147   40.1%
+john                92.5%  96.7%   7.4%   2245       -
+julius_caesar       91.6%  94.4%  17.7%   1809   30.1%
+titus               91.3%  95.3%  10.6%   2039   36.8%
+richardii           91.1%  95.0%  11.1%   2444   66.7%
+comedy_errors       90.9%  94.6%  15.2%   1248   42.4%
+1henryvi            90.7%  94.8%   9.8%   2343   57.1%
+richardiii          90.5%  94.4%  19.8%   2797   42.4%
+2henryvi            90.0%  94.5%  13.9%   2155   32.8%
+two_gentlemen       89.6%  93.3%  17.8%   1277   38.4%
+henryv              89.5%  93.1%  19.6%   1643   32.9%
+1henryiv            89.3%  93.8%   7.2%   1345   35.0%
+merchant            89.2%  93.1%  16.2%   1734   29.8%
+2henryiv            88.5%  93.1%  16.5%   1370   33.1%
+troilus_cressida    86.4%  91.0%  22.7%   1718   31.8%
+allswell            85.9%  90.1%  24.9%   1168   30.4%
+taming_shrew        85.8%  91.2%  20.4%   1588   32.8%
+hamlet              85.7%  90.0%  22.1%   2128   33.1%
+much_ado            85.2%  88.8%  20.9%    596   34.6%
+lll                 85.1%  89.4%   8.6%   1258   32.3%
+twelfth_night       84.8%  88.7%  22.2%    750   32.2%
+asyoulikeit         84.1%  87.5%  24.4%    942   32.9%
+midsummer           83.7%  87.2%  10.5%   1341   41.5%
+henryviii           82.5%  86.6%  43.6%   2251   41.0%
+othello             82.4%  87.4%  27.4%   1861   30.9%
+winters_tale        82.2%  86.6%  32.1%   1611   36.0%
+cleopatra           81.1%  86.1%  26.8%   1925   30.6%
+lear                80.4%  85.1%  29.4%   1733   34.8%
+cymbeline           80.2%  84.5%  29.2%   1822   34.3%
+measure             79.9%  85.2%  25.5%   1326   28.9%
+macbeth             79.9%  84.5%  24.8%   1383   36.6%
+tempest             78.7%  82.5%  31.1%   1252   33.9%
+coriolanus          78.2%  84.1%  26.4%   1830   31.6%
+timon               76.7%  84.5%  25.0%   1105   34.0%
+merry_wives         75.2%  82.8%  21.6%    314   34.8%
+pericles            70.9%  76.3%  21.4%   1357   40.0%
