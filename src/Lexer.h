@@ -19,12 +19,13 @@ struct Token {
 
 class Lexer {
  public:
-  Lexer(const SourceFile &src, Diagnostics &diag);
+  Lexer(const SourceFile &src, Diagnostics &diag, bool lenient = false);
   std::vector<Token> tokenize();
 
  private:
   const SourceFile &src_;
   Diagnostics &diag_;
+  bool lenient_;  // plain text, not a play: digits and odd characters are skipped silently
 };
 
 }  // namespace spl

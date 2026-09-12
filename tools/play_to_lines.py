@@ -6,7 +6,9 @@ usage: play_to_lines.py PLAY... > lines.txt
 
 PLAY may be
   * a shakespeare.mit.edu play page (full.html, or the per-scene pages): dialogue
-    lines are <A NAME=act.scene.line>...</A>, speakers are <b>NAME</b>;
+    lines are <A NAME=act.scene.line>...</A> (full.html) or <A NAME=line>...</A>
+    (scene pages), speakers are <b>NAME</b>;
+  * a directory holding such a play: its full.html is used;
   * a plain-text play in the "speaker on its own line, dialogue indented" layout
     used by the common GitHub mirrors of the same site.
 
@@ -15,13 +17,13 @@ letter, or fewer than `--min-words` words, default 6) are dropped.  The result i
 noisy where the play mixes prose and verse; Richard II and Richard III are entirely
 verse and make the cleanest corpora.
 """
-import html, re, sys
+import html, os, re, sys
 
 MIN_WORDS = 6
 STAGE = re.compile(r"^\s*(Enter|Exit|Exeunt|Re-enter|Flourish|Alarum|Sennet|Drum|Trumpet|Music|Aside)\b")
 
 def from_html(text):
-    for m in re.finditer(r"<A NAME=\d+\.\d+\.\d+>(.*?)</A>", text, re.S | re.I):
+    for m in re.finditer(r"<A NAME=\d+(?:\.\d+\.\d+)?>(.*?)</A>", text, re.S | re.I):
         yield html.unescape(re.sub(r"<[^>]+>", "", m.group(1))).strip()
 
 def from_plain(text):
@@ -40,6 +42,7 @@ def main(args):
         print(__doc__); return 2
     n = 0
     for path in files:
+        if os.path.isdir(path): path = os.path.join(path, "full.html")
         text = open(path, encoding="latin-1").read()
         lines = from_html(text) if "<A NAME=" in text.upper() or "<a name=" in text else from_plain(text)
         for l in lines:

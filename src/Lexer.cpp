@@ -7,7 +7,7 @@
 
 namespace spl {
 
-Lexer::Lexer(const SourceFile &src, Diagnostics &diag) : src_(src), diag_(diag) {}
+Lexer::Lexer(const SourceFile &src, Diagnostics &diag, bool lenient) : src_(src), diag_(diag), lenient_(lenient) {}
 
 static bool isWordByte(unsigned char c) {
   return std::isalpha(c) || c == '\'' || c == '-' || c == 0xC3 || (c >= 0xA0 && c <= 0xBF);  // è/é and their continuation byte
@@ -52,11 +52,11 @@ std::vector<Token> Lexer::tokenize() {
         ++i;  // dashes are whitespace to us
         continue;
       } else if (std::isdigit(c)) {
-        diag_.error(t.loc, "digits are not permitted; numbers must be spoken of in words");
+        if (!lenient_) diag_.error(t.loc, "digits are not permitted; numbers must be spoken of in words");
         while (i < s.size() && std::isdigit((unsigned char)s[i])) ++i;
         continue;
       } else {
-        diag_.error(t.loc, std::string("unexpected character '") + (char)c + "'");
+        if (!lenient_) diag_.error(t.loc, std::string("unexpected character '") + (char)c + "'");
         ++i;
         continue;
       }

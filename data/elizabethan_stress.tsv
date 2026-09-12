@@ -76,3 +76,13 @@ somewhat	01
 methinks	10
 away	10
 calais	10
+# mined from the 37 plays with tools/mine_stress.py --min 6 (the rest of its output is inversions)
+henceforth	10
+forthwith	01
+herein	10
+outside	10
+archbishop	100
+lamentable	1000
+monsieur	10
+fourteen	10
+sixteen	10

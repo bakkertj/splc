@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
   spl::SourceFile src;
   if (!src.load(input)) { std::fprintf(stderr, "splc: cannot read %s\n", input.c_str()); return 1; }
   spl::Diagnostics diag(src);
-  spl::Lexer lexer(src, diag);
+  spl::Lexer lexer(src, diag, scanText);
   std::vector<spl::Token> toks = lexer.tokenize();
   spl::Program prog;
   if (!scanText) {

@@ -137,7 +137,7 @@ std::vector<std::string> Lexicon::stressOptions(const std::string &word, bool gr
     if (endsWith(w, "ion") || endsWith(w, "ious") || endsWith(w, "ience")) res.insert(o + "0");
     // syncope: heaven, even, power, flower, spirit, being, every, -ual, -ious -> one fewer
     static const char *syn[] = {"aven", "even", "ower", "irit", "eing", "ery", "ary", "ual", "ious", "eous", "ier", "ior", "eor",
-                                "eral", "erous", "ering", "ening", "oral", "ural", "ident", "ience", "ienc", "iance", "iant", "ient", "uous", "eath", "ison", "uel"};
+                                "eral", "erous", "ering", "ening", "oral", "ural", "ident", "ience", "ienc", "iance", "iant", "ient", "uous", "eath", "ison", "uel", "evil"};
     for (const char *s : syn)
       if (w.find(s) != std::string::npos && o.size() > 1) {
         // drop one unstressed syllable, preferring the last
