@@ -8,3 +8,4 @@ Claude outputs/
 build-mac/
 build_mac.log
 *.swp
+__pycache__/

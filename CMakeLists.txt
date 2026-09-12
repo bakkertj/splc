@@ -62,3 +62,5 @@ add_test(NAME sonnet_strict COMMAND $<TARGET_FILE:splc> -fsyntax-only -fsonnet -
 add_test(NAME sonnet_not COMMAND sh ${CMAKE_SOURCE_DIR}/test/expect_fail.sh $<TARGET_FILE:splc> ${CMAKE_SOURCE_DIR}/examples/hello_verse.spl -fsonnet -fpentameter=error)
 add_test(NAME balcony COMMAND sh ${CMAKE_SOURCE_DIR}/test/run_file.sh $<TARGET_FILE:splc> ${CMAKE_SOURCE_DIR}/examples/balcony.spl ${CMAKE_SOURCE_DIR}/examples/balcony.txt)
 add_test(NAME balcony_is_prose COMMAND $<TARGET_FILE:splc> -fsyntax-only -fpentameter=error ${CMAKE_SOURCE_DIR}/examples/balcony.spl)
+add_test(NAME balcony_verse COMMAND sh ${CMAKE_SOURCE_DIR}/test/run_file.sh $<TARGET_FILE:splc> ${CMAKE_SOURCE_DIR}/examples/balcony_verse.spl ${CMAKE_SOURCE_DIR}/examples/balcony.txt)
+add_test(NAME balcony_verse_strict COMMAND $<TARGET_FILE:splc> -fsyntax-only -fpentameter=error -frhyme-scheme=AABB ${CMAKE_SOURCE_DIR}/examples/balcony_verse.spl)
