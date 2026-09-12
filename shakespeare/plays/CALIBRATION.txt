@@ -1,38 +1,43 @@
-# share of extracted lines that scan at tolerance 0, lines, play  (splc --scan-text; regenerate with tools/build_corpus.sh then the loop in README)
- 93.1%   2743  3henryvi
- 92.5%   2405  john
- 90.5%   2513  1henryvi
- 90.4%   2589  richardii
- 90.3%   2335  titus
- 89.2%   2535  romeo_juliet
- 88.7%   3305  richardiii
- 88.4%   2047  julius_caesar
- 86.9%   1503  comedy_errors
- 85.9%   2579  2henryvi
- 83.5%   2010  merchant
- 81.3%   2423  henryviii
- 80.5%   2055  taming_shrew
- 80.2%   1681  two_gentlemen
- 78.8%   1632  midsummer
- 78.5%   2163  henryv
- 77.9%   1934  1henryiv
- 77.5%   2658  hamlet
- 77.5%   1625  macbeth
- 77.2%   2076  winters_tale
- 77.0%   2490  cymbeline
- 77.0%   2279  cleopatra
- 76.7%   2350  troilus_cressida
- 76.5%   2364  othello
- 74.7%   1995  2henryiv
- 72.6%   2231  lear
- 72.4%   1694  allswell
- 72.2%   2375  coriolanus
- 71.6%   1911  lll
- 71.4%   1523  tempest
- 70.1%   1764  pericles
- 70.0%   1615  timon
- 68.9%   1775  measure
- 66.5%   1498  asyoulikeit
- 63.6%   1341  twelfth_night
- 59.6%   1334  much_ado
- 48.6%   1135  merry_wives
+# splc --scan-text at tolerance 0: share of lines that scan, by play and by kind.
+# verse = speeches whose lines all begin with a capital; prose = speeches wrapped by the
+# edition (continuation lines begin in lower case). Regenerate: tools/build_corpus.sh, then
+# the loop in README. Prose lines are wrapped near ten syllables, which is why they still
+# scan a third of the time: that is the checker's floor, not a sign of hidden verse.
+play                verse  lines    prose  lines
+3henryvi            92.9%   2437    58.8%     17
+romeo_juliet        92.7%   2147    40.1%    242
+john                92.5%   2245     0.0%      0
+julius_caesar       91.6%   1809    30.1%    113
+titus               91.3%   2039    36.8%     19
+richardii           91.1%   2444    66.7%      6
+comedy_errors       90.9%   1248    42.4%    144
+1henryvi            90.7%   2343    57.1%      7
+richardiii          90.5%   2797    42.4%     33
+2henryvi            90.0%   2155    32.8%    348
+two_gentlemen       89.6%   1277    38.4%    271
+henryv              89.5%   1643    32.9%    916
+1henryiv            89.3%   1345    35.0%    933
+merchant            89.2%   1734    29.8%    433
+2henryiv            88.5%   1370    33.1%   1087
+troilus_cressida    86.4%   1718    31.8%    566
+allswell            85.9%   1168    30.4%    875
+taming_shrew        85.8%   1588    32.8%    302
+hamlet              85.7%   2128    33.1%    670
+much_ado            85.2%    596    34.6%   1211
+lll                 85.1%   1258    32.3%    535
+twelfth_night       84.8%    750    32.2%    937
+asyoulikeit         84.1%    942    32.9%    969
+midsummer           83.7%   1341    41.5%    277
+henryviii           82.5%   2251    41.0%     83
+othello             82.4%   1861    30.9%    418
+winters_tale        82.2%   1611    36.0%    627
+cleopatra           81.1%   1925    30.6%    157
+lear                80.4%   1733    34.8%    543
+cymbeline           80.2%   1822    34.3%    347
+measure             79.9%   1326    28.9%    684
+macbeth             79.9%   1383    36.6%    112
+tempest             78.7%   1252    33.9%    257
+coriolanus          78.2%   1830    31.6%    494
+timon               76.7%   1105    34.0%    371
+merry_wives         75.2%    314    34.8%   1490
+pericles            70.9%   1357    40.0%    250

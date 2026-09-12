@@ -114,12 +114,13 @@ The grammar is SPL 1.2.1 with these liberties:
 | `tools/gen_lexicon.py` | builds `generated/Lexicon.inc` from `data/` |
 | `tools/sonnets_to_text.py` | turns the shakespeare.mit.edu sonnet pages into `shakespeare/sonnets.txt` and `sonnets_lines.txt` |
 | `tools/mine_stress.py` | runs `--suggest-stress` over corpora and proposes `elizabethan_stress.tsv` lines with counts |
-| `tools/play_to_lines.py` | extracts the verse lines of a play (shakespeare.mit.edu HTML or plain text) for the same tools |
-| `tools/build_corpus.sh` | runs it over a shakespeare.mit.edu download to fill `shakespeare/plays/` |
+| `tools/play_to_lines.py` | extracts a play's lines (shakespeare.mit.edu HTML or plain text), classifying each speech as verse or prose |
+| `tools/poem_to_stanzas.py` | turns a long-poem page into blank-line-separated stanzas |
+| `tools/build_corpus.sh` | runs both over a shakespeare.mit.edu download to fill `shakespeare/plays/` and `shakespeare/poems/` |
 | `docs/writing-a-sonnet.md` | how `examples/sonnet.spl` was written, and how to write your own |
 | `data/` | CMUdict, WordNet index files, VADER, `shakespeare_names.txt`, `name_stress.tsv` (596 Shakespearean names with their metrical stress), `elizabethan_stress.tsv` (words Shakespeare stressed differently), `overrides.tsv` |
 | `generated/Lexicon.inc` | the word table compiled into `splc` (about 5.5 MB of source, about 2 MB in the binary) |
-| `shakespeare/` | the 154 sonnets, the verse lines of Richard II, and `plays/` with the verse-looking lines of all 37 plays (76,485 lines), used for calibration |
+| `shakespeare/` | the 154 sonnets, Richard II, `plays/` with the verse and prose lines of all 37 plays (60,292 verse, 16,744 prose), and `poems/` with Venus and Adonis, Lucrece and A Lover's Complaint as stanzas; all used for calibration |
 | `examples/` | `hello.spl` (prose), `hello_verse.spl` (strict pentameter), `primes.spl` (loops, I/O, stack), `fizzbuzz.spl`, `reverse.spl` (a string reversed through the stack), `couplets.spl` (couplets and a prose-speaking servant), `sonnet.spl` (two speakers, a sonnet each) |
 | `test/` | the two shell helpers `ctest` uses; the thirteen tests are declared in `CMakeLists.txt` |
 
@@ -196,58 +197,51 @@ Ho!
 
 ## Calibration
 
-The reference corpora are `shakespeare/sonnets_lines.txt` (all 154 sonnets, 2,155 lines,
-made from the shakespeare.mit.edu pages by `tools/sonnets_to_text.py`) and
-`shakespeare/richard2_lines.txt` (Richard II is entirely verse; 2,606 lines of six or more
-words, extracted with `tools/play_to_lines.py`). `shakespeare/plays/` holds the same
-extraction for all 37 plays (76,485 lines, 79% of which scan; the per-play figures are in
-`shakespeare/plays/CALIBRATION.txt`). The controls are
-the sonnet lines with their words shuffled, and Hamlet's prose wrapped to ten-ish
-syllables.
+Everything under `shakespeare/` comes from the shakespeare.mit.edu edition via the tools
+above: `sonnets_lines.txt` (154 sonnets, 2,155 lines), `plays/<play>_verse.txt` and
+`_prose.txt` for all 37 plays, and `poems/` for the three long poems as stanzas. The
+edition does not mark prose, but it wraps prose at a fixed width so continuation lines
+begin in lower case, while every verse line begins with a capital; `play_to_lines.py`
+classifies each speech that way. The prose is therefore a real control: Shakespeare's
+own sentences, cut by a typesetter into lines of roughly ten syllables.
 
-Metre, share of lines that scan:
+Metre, share of lines that scan at tolerance 0:
 
-| corpus | tolerance 0 | tolerance 1 |
+| corpus | lines | scan |
 |---|---|---|
-| Sonnets | 93% | 97% |
-| Richard II | 89% | 94% |
-| Sonnets, words shuffled (control) | 58% | 91% |
-| Hamlet prose (control) | 12% | 41% |
+| Sonnets | 2,155 | 93% |
+| All plays, verse speeches | 60,292 | 86% |
+| All plays, prose speeches (control) | 16,744 | 34% |
+| Sonnets, words shuffled (control) | 2,155 | 59% |
 
-Tolerance 0 is the default because it is where the checker still tells verse from
-shuffled verse; most of Shakespeare's own misses are lines the editors joined, syncopes
-no rule covers, or the irregular lines he simply wrote. The default mode is therefore
-`warn`; `-fpentameter=error` is for the purist.
+Tolerance 0 is the default because it is where the checker still tells verse from prose
+and from shuffled verse; with tolerance 1 the shuffled control passes 91%. Most of
+Shakespeare's own misses are syncopes no rule covers, lines the editors joined, or the
+irregular lines he simply wrote. The default mode is therefore `warn`; `-fpentameter=error`
+is for the purist.
 
-Ranking the plays by pass rate reproduces what any editor would say about which are verse
-and which are prose. The extraction cannot tell prose from verse, so prose-heavy plays sink:
+Ranked by play (`shakespeare/plays/CALIBRATION.txt` has all 37), the verse pass rate
+follows the chronology any editor would give: the early histories, Romeo and Juliet, King
+John and Julius Caesar score 91 to 93%, and the late plays, whose verse is looser, trail
+(Tempest 79%, Coriolanus 78%, Timon 77%, Pericles 71%). Prose sits between 29% and 42%
+for every play with more than a hundred prose lines.
 
-| play | lines | scan |
-|---|---|---|
-| Henry VI, Part 3 | 2,743 | 93% |
-| King John | 2,405 | 93% |
-| Henry VI, Part 1 | 2,513 | 91% |
-| Richard II | 2,589 | 90% |
-| Titus Andronicus | 2,335 | 90% |
-| Romeo and Juliet | 2,535 | 89% |
-| ... | | |
-| As You Like It | 1,498 | 67% |
-| Twelfth Night | 1,341 | 64% |
-| Much Ado About Nothing | 1,334 | 60% |
-| The Merry Wives of Windsor | 1,135 | 49% |
+Rhyme, with `--scan-text -frhyme-scheme=...` over blank-line-separated stanzas:
 
-The early histories and Richard II, which Shakespeare wrote entirely in verse, lead; the
-comedies whose wit is in prose trail, and Merry Wives, almost all prose, is last.
-
-Rhyme, on the sonnets' 1,078 rhyme pairs:
+| poem | scheme | rhyme pairs | strict | `-fnear-rhymes` |
+|---|---|---|---|---|
+| Sonnets | ABAB CDCD EFEF GG | 1,078 | 93% | 98% |
+| Venus and Adonis | ABABCC | 597 | 92% | 97% |
+| The Rape of Lucrece | ABABBCC | 1,060 | 91% | 96% |
+| A Lover's Complaint | ABABBCC | 188 | 94% | 97% |
 
 ```
 grep -v '^Sonnet' shakespeare/sonnets.txt | splc --scan-text "-frhyme-scheme=ABAB CDCD EFEF GG" /dev/stdin
-80 rhyme violation(s) in 154 stanza(s)      # 93% recognised; 22 (98%) with -fnear-rhymes
+splc --scan-text -frhyme-scheme=ABABBCC shakespeare/poems/lucrece.txt
 ```
 
-The strict misses are Shakespeare's own near-rhymes (*come/doom*, *tongue/wrong*). The same
-lines with their words shuffled produce 1,004 violations (974 with `-fnear-rhymes`).
+The strict misses are Shakespeare's own near-rhymes (*come/doom*, *tongue/wrong*). The
+sonnet lines with their words shuffled produce 1,004 violations (974 with `-fnear-rhymes`).
 
 `--suggest-stress` is how `data/elizabethan_stress.tsv` was seeded: run over a corpus it
 lists, for every failing line, the single words whose stress would have to move for the
@@ -261,6 +255,7 @@ noise, and prints candidate `.tsv` lines with their counts for you to paste in.
 ```
 python3 tools/gen_lexicon.py         # or: cmake --build build --target lexicon
 python3 tools/sonnets_to_text.py shakespeare/shakespeare.mit.edu/Poetry shakespeare
+sh tools/build_corpus.sh shakespeare/shakespeare.mit.edu     # plays/ and poems/
 ```
 
 Edit `data/overrides.tsv` (word, flags, polarity, stress) to correct a word, or
